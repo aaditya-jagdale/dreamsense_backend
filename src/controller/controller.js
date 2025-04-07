@@ -1,12 +1,18 @@
 import { askGemini } from "../models/models.js";
 
 export const dreamsense = async (req, res) => {
+  console.log("🌙 [Dreamsense] Received request");
   const { conversation } = req.body;
 
   if (!conversation) {
-    console.log("Missing conversation body");
+    console.log("❌ [Dreamsense] Error: Missing conversation body");
     return res.status(400).json({ error: "Conversation is required" });
   }
+
+  console.log(
+    "📝 [Dreamsense] Processing request with conversation:",
+    JSON.stringify(conversation)
+  );
 
   const instructions = `Act as a old kind sympathatic man with the following context:
 You have deep expertise in psychology, dreams, and human brain
@@ -60,6 +66,13 @@ Use medium simple english
   //   ],
   // };
 
-  const response = await askGemini(instructions, conversation);
-  res.json({ success: true, message: response });
+  console.log("🚀 [Dreamsense] Sending request to Gemini model");
+  try {
+    const response = await askGemini(instructions, conversation);
+    console.log("✅ [Dreamsense] Successfully received response from Gemini");
+    res.json({ success: true, message: response });
+  } catch (error) {
+    console.error("💥 [Dreamsense] Error processing request:", error);
+    res.status(500).json({ success: false, error: "Internal server error" });
+  }
 };

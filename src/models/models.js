@@ -105,20 +105,28 @@ export async function askAI(messages, format) {
  * @returns {Promise<string>} Response text
  */
 export async function askGemini(instructions, messages, format) {
+  console.log(
+    "🤖 [Gemini] Initializing request with instructions:",
+    instructions.substring(0, 100) + "..."
+  );
   try {
     const model = genAI.getGenerativeModel({
       model: CONFIG.gemini.model,
       systemInstruction: instructions,
     });
 
+    console.log("💬 [Gemini] Starting chat session");
     const chatSession = model.startChat({
       generationConfig: CONFIG.gemini.config,
       history: messages,
     });
 
+    console.log("📤 [Gemini] Sending message to Gemini API");
     const result = await chatSession.sendMessage(instructions);
+    console.log("📥 [Gemini] Successfully received response from Gemini API");
     return result.response.text();
   } catch (error) {
+    console.error("⚠️ [Gemini] API error:", error.message);
     throw new Error(`Gemini API error: ${error.message}`);
   }
 }
