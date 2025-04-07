@@ -1,6 +1,10 @@
 import dotenv from "dotenv";
 import fetch from "node-fetch";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import {
+  GoogleGenerativeAI,
+  HarmCategory,
+  HarmBlockThreshold,
+} from "@google/generative-ai";
 
 dotenv.config();
 
