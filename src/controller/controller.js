@@ -1,50 +1,65 @@
 import { askGemini } from "../models/models.js";
 
-export const interview = async (req, res) => {
-  const { role, conversation } = req.body;
+export const dreamsense = async (req, res) => {
+  const { conversation } = req.body;
 
-  if (!role || !conversation) {
-    console.log("Role or conversation is missing:");
-    return res
-      .status(400)
-      .json({ error: "Role and conversation are required" });
+  if (!conversation) {
+    console.log("Missing conversation body");
+    return res.status(400).json({ error: "Conversation is required" });
   }
 
-  const instructions = `Act as a strict interviewer conducting job interviews for a competitive position. Your role is to assess candidates rigorously, looking for any signs of insincerity, dishonesty, or attempts to fake qualifications. Develop a series of challenging, open-ended questions that gauge not only the candidates' technical skills but also their character and authenticity. Provide insights on how to interpret their responses, identify potential red flags, and ensure a fair evaluation process. Include tips on how to create an atmosphere that encourages genuine responses while also maintaining a firm and professional demeanor. Enable me to fully understand the interviewing techniques and psychological considerations involved in detecting dishonesty.
-      You must only ask 5-6 questions. And after that acknowledge the candidate's response and just tell them that you will get back to them with the results.
-      The interviews is for the position of: ${role}. Now start the interview with the first question.
+  const instructions = `Act as a old kind sympathatic man with the following context:
+You have deep expertise in psychology, dreams, and human brain
+You have an IQ of 180
+You have to clarify things I see in my dreams and try to find meaning behind them
+You are very kind and have a lot of wisdom
+Dreams are means to hidden factors that are hapenning in ones life at the moment and you will help me find out those things
+
+Your mission is to:
+Analyse my dreams properly
+Find deep meanings if there is any
+Dont go too deep if the description is bulllshit
+List down all possible hidden messages behind my dreams
+Be Short and sweet
+
+For response:
+Be very sympathetic
+Try to comfort user as much as you can
+MUST LIST DOWN ALL POSSIBLE HIDDEN MEANINGS WITH ONE LINE DESCRIPTION
+At the end try to provide value to the user in some way
+If the dreams were negative give them hope
+If the dreams were possitive give them assurance
+At the end try to ask some relatable question about the message above, but dont force it.
+
+Persona:
+You are an old wise man
+Your name is Mr. Oval
+You are very intillegent 
+You hold a lot of wisdom
+You are very sympathetic
+Use medium simple english
       `;
-  // const messages = [
-  //   {
-  //     role: "user",
-  //     content: `Act as a strict interviewer conducting job interviews for a competitive position. Your role is to assess candidates rigorously, looking for any signs of insincerity, dishonesty, or attempts to fake qualifications. Develop a series of challenging, open-ended questions that gauge not only the candidates' technical skills but also their character and authenticity. Provide insights on how to interpret their responses, identify potential red flags, and ensure a fair evaluation process. Include tips on how to create an atmosphere that encourages genuine responses while also maintaining a firm and professional demeanor. Enable me to fully understand the interviewing techniques and psychological considerations involved in detecting dishonesty.
-  //     You must only ask 5-6 questions. And after that acknowledge the candidate's response and just tell them that you will get back to them with the results.
-  //     The interviews is for the position of: ${role}. Now start the interview with the first question.
-  //     `
+  const messages = conversation;
+  // const format = {
+  //   type: "object",
+  //   properties: {
+  //     reply: {
+  //       type: "string",
+  //     },
+  //     candidate_confidence_percentage: {
+  //       type: "number",
+  //     },
+  //     lying_percentage: {
+  //       type: "number",
+  //     },
   //   },
-  //   ...conversation
-  // ];
+  //   required: [
+  //     "candidates_previous_response",
+  //     "candidate_confidence_percentage",
+  //     "lying_percentage",
+  //   ],
+  // };
 
-  const format = {
-    type: "object",
-    properties: {
-      reply: {
-        type: "string",
-      },
-      candidate_confidence_percentage: {
-        type: "number",
-      },
-      lying_percentage: {
-        type: "number",
-      },
-    },
-    required: [
-      "candidates_previous_response",
-      "candidate_confidence_percentage",
-      "lying_percentage",
-    ],
-  };
-
-  const response = await askGemini(instructions, conversation, format);
+  const response = await askGemini(instructions, conversation);
   res.json({ success: true, message: response });
 };

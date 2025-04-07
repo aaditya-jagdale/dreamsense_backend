@@ -1,4 +1,4 @@
-import { interview } from "../controller/controller.js";
+import { dreamsense } from "../controller/controller.js";
 import { Router } from "express";
 import express from "express";
 
@@ -9,10 +9,10 @@ router.use(express.json());
 router.use(express.urlencoded({ extended: true }));
 
 router.get("/", (req, res) => {
-    res.send("Hello World!");
+  res.send("Hello World!");
 });
 
 //Test route
-router.post("/interview", interview);
+router.post("/dreamsense", dreamsense);
 
 export default router;
