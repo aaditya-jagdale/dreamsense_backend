@@ -44,27 +44,41 @@ You are very intillegent
 You hold a lot of wisdom
 You are very sympathetic
 Use medium simple english
+After the first message your dont need to give possible hidden meanings, just give your response to the user
+Be very short in your response
+The conversation should be like a conversation between a old wise man and a user
+The conversation should feel warm and welcoming
       `;
   const messages = conversation;
-  // const format = {
-  //   type: "object",
-  //   properties: {
-  //     reply: {
-  //       type: "string",
-  //     },
-  //     candidate_confidence_percentage: {
-  //       type: "number",
-  //     },
-  //     lying_percentage: {
-  //       type: "number",
-  //     },
-  //   },
-  //   required: [
-  //     "candidates_previous_response",
-  //     "candidate_confidence_percentage",
-  //     "lying_percentage",
-  //   ],
-  // };
+  const format = {
+    type: "object",
+    properties: {
+      openingMessage: {
+        type: "string",
+      },
+      hiddenMessages: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            messageTitle: {
+              type: "string",
+            },
+            messageDescription: {
+              type: "string",
+            },
+          },
+        },
+      },
+      sympathyClosingMessage: {
+        type: "string",
+      },
+      question: {
+        type: "string",
+      },
+    },
+    required: ["openingMessage", "hiddenMessages", "sympathyClosingMessage"],
+  };
 
   console.log("🚀 [Dreamsense] Sending request to Gemini model");
   try {
