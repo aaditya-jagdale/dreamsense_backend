@@ -1,4 +1,4 @@
-import { dreamsense } from "../controller/controller.js";
+import { dreamsense, getChatInfo } from "../controller/dreamsense.js";
 import { Router } from "express";
 import express from "express";
 
@@ -12,8 +12,10 @@ router.get("/", (req, res) => {
   res.send("Hello World!");
 });
 
-//Test route
+//AI Chat
 router.post("/dreamsense", dreamsense);
 
+//Get Chat Info
+router.post("/get-chat-info", getChatInfo);
 
 export default router;
