@@ -1,6 +1,7 @@
 import { dreamsense, getChatInfo } from "../controller/dreamsense.js";
 import { Router } from "express";
 import express from "express";
+import { generateDailyRead } from "../controller/daily_read.js";
 
 const router = Router();
 
@@ -17,5 +18,8 @@ router.post("/dreamsense", dreamsense);
 
 //Get Chat Info
 router.post("/get-chat-info", getChatInfo);
+
+//Generate Daily Read
+router.post("/daily-read", generateDailyRead);
 
 export default router;
