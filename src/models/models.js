@@ -14,7 +14,7 @@ const CONFIG = {
   },
   gemini: {
     apiKey: process.env.GEMINI_API_KEY,
-    model: "gemini-2.0-flash-thinking-exp-01-21",
+    model: "gemini-2.0-flash",
     config: {
       temperature: 1.4,
       topP: 0.8,
