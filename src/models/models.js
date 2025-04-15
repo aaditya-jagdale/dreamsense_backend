@@ -1,10 +1,6 @@
 import dotenv from "dotenv";
 import fetch from "node-fetch";
-import {
-  GoogleGenerativeAI,
-  HarmCategory,
-  HarmBlockThreshold,
-} from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 
 dotenv.config();
 
@@ -18,7 +14,7 @@ const CONFIG = {
   },
   gemini: {
     apiKey: process.env.GEMINI_API_KEY,
-    model: "gemini-2.0-flash-thinking-exp-01-21",
+    model: "gemini-2.0-flash",
     config: {
       temperature: 1.4,
       topP: 0.8,
@@ -30,14 +26,8 @@ const CONFIG = {
 };
 
 // Initialize Gemini client
-const genAI = new GoogleGenerativeAI(CONFIG.gemini.apiKey);
+const ai = new GoogleGenAI({ apiKey: CONFIG.gemini.apiKey });
 
-/**
- * Makes a request to the Ollama API with retry logic
- * @param {Array} messages - Array of message objects
- * @param {Object} format - Expected response format
- * @returns {Promise<Object|null>} Parsed response or null on failure
- */
 export async function askAI(messages, format) {
   if (!Array.isArray(messages) || messages.length === 0) {
     throw new Error("Invalid messages array provided");
@@ -97,21 +87,9 @@ export async function askAI(messages, format) {
   }
 }
 
-/**
- * Makes a request to the Gemini API
- * @param {string} instructions - System instructions
- * @param {Array} messages - Array of previous messages
- * @param {Object} format - Expected response format
- * @returns {Promise<string>} Response text
- */
 export async function askGemini(instructions, messages, format) {
   console.log("🤖 [Gemini] Initializing request with instructions:");
   try {
-    const model = genAI.getGenerativeModel({
-      model: CONFIG.gemini.model,
-      systemInstruction: instructions,
-    });
-
     console.log("💬 [Gemini] Starting chat session");
     // Ensure messages is an array and format it properly for Gemini
     const history = Array.isArray(messages)
@@ -121,15 +99,22 @@ export async function askGemini(instructions, messages, format) {
         }))
       : [];
 
-    const chatSession = model.startChat({
-      generationConfig: CONFIG.gemini.config,
+    const chatSession = ai.chats.create({
+      model: CONFIG.gemini.model,
+      systemInstruction: instructions,
       history: history,
+      config: CONFIG.gemini.config,
     });
 
     console.log("📤 [Gemini] Sending message to Gemini API");
-    const result = await chatSession.sendMessage(instructions);
-    console.log("📥 [Gemini] Successfully received response from Gemini API");
-    return result.response.text();
+    const result = await chatSession.sendMessage({
+      message: messages[messages.length - 1].parts[0].text,
+    });
+    console.log(
+      "📥 [Gemini] Successfully received response from Gemini API",
+      result
+    );
+    return result.text;
   } catch (error) {
     console.error("⚠️ [Gemini] API error:", error.message);
     throw new Error(`Gemini API error: ${error.message}`);
@@ -139,7 +124,7 @@ export async function askGemini(instructions, messages, format) {
 export async function titleGenerator({ answer, instructions, format }) {
   console.log("🤖 [Gemini] Initializing request with instructions:");
   try {
-    const model = genAI.getGenerativeModel({
+    const model = ai.getGenerativeModel({
       model: "gemini-2.0-flash",
       systemInstruction: instructions,
     });
@@ -179,7 +164,7 @@ export async function titleGenerator({ answer, instructions, format }) {
 export async function generateBlogPost({ instructions, conversation }) {
   console.log("🤖 [Gemini] Initializing request with instructions:");
   try {
-    const model = genAI.getGenerativeModel({
+    const model = ai.getGenerativeModel({
       model: "gemini-2.0-flash",
       systemInstruction: instructions.contents,
     });
