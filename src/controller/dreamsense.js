@@ -19,6 +19,7 @@ export const dreamsense = async (req, res) => {
     return res.status(400).json({ error: "Conversation is required" });
   }
 
+  //Getting Prompt from Supabase
   let { data: prompt, error } = await supabase
     .from("daily_read")
     .select()
@@ -35,11 +36,13 @@ export const dreamsense = async (req, res) => {
     return res.status(404).json({ error: "Chat data not found" });
   }
 
-  console.log("📝 [Dreamsense] Processing request with conversation:");
+  console.log(
+    "📝 [Dreamsense] Processing request with conversation: ",
+    conversation
+  );
 
   const instructions = prompt.contents;
-
-  console.log("🚀 [Dreamsense] Sending request to Gemini model", prompt);
+  console.log("🚀 [Dreamsense] Sending request to Gemini model", instructions);
   try {
     const response = await askGemini(instructions, conversation);
     console.log("✅ [Dreamsense] Successfully received response from Gemini");
