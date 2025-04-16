@@ -1,6 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
-import { askGemini, generateBlogPost } from "../models/models.js";
+import {
+  askGemini,
+  generateBlogPost,
+  titleGenerator,
+} from "../models/models.js";
 
 dotenv.config();
 
@@ -29,32 +33,38 @@ export const generateDailyRead = async (req, res) => {
     return res.status(404).json({ error: "Prompt data not found" });
   }
 
-  const conversation = {
-    conversation: [
-      {
-        role: "user",
-        parts: [
-          {
-            text: "Pick a random topic very carefully which is not too common and write a blog post on it",
-          },
-        ],
-      },
-    ],
-  };
+  const contents =
+    "Pick a random topic very carefully which is not too common and write a blog post on it";
 
   try {
-    const response = await generateBlogPost({
-      instructions: prompt,
-      conversation,
+    const blogContent = await generateBlogPost({
+      instructions: prompt.contents,
+      contents,
     });
     console.log("✅ [Dreamsense] Successfully received response from Gemini");
+
+    const format = {
+      type: "object",
+      properties: {
+        title: {
+          type: "string",
+        },
+      },
+      required: ["title"],
+    };
+
+    const title = await titleGenerator({
+      answer: blogContent,
+      instructions: prompt.contents,
+      format,
+    });
 
     try {
       const { data: insertData, error: insertError } = await supabase
         .from("daily_read")
         .insert({
-          title: response.title,
-          contents: response.content,
+          title: title.title,
+          contents: blogContent,
         });
 
       if (insertError) {
@@ -70,8 +80,8 @@ export const generateDailyRead = async (req, res) => {
       res.json({
         success: true,
         data: {
-          title: response.title,
-          contents: response.content,
+          title: title.title,
+          contents: blogContent,
         },
       });
     } catch (uploadError) {

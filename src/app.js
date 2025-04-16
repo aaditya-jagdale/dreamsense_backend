@@ -11,18 +11,22 @@ const app = express();
 app.use(express.json());
 
 // Middleware
-app.use("/api", routes);
+app.use("/api", routes); 
 
 // Schedule daily read generation at 4 AM
 cron.schedule("0 4 * * *", async () => {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] 🕒 Starting scheduled daily read generation...`);
   try {
-    console.log("🕒 Running daily read generation...");
-    await axios.post(
-      "http://localhost:" + (process.env.PORT || 4884) + "/api/daily-read"
+    await axios.post(process.env.RENDER_URL + "/api/daily-read");
+    console.log(
+      `[${timestamp}] ✅ Daily read generation completed successfully`
     );
-    console.log("✅ Daily read generation completed successfully");
   } catch (error) {
-    console.error("❌ Error generating daily read:", error.message);
+    console.error(
+      `[${timestamp}] ❌ Error generating daily read:`,
+      error.message
+    );
   }
 });
 
