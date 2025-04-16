@@ -147,57 +147,25 @@ export async function titleGenerator({ answer, instructions, format }) {
   }
 }
 
-export async function generateBlogPost({ instructions, conversation }) {
+export async function generateBlogPost({ instructions, contents }) {
   console.log("🤖 [Gemini] Initializing request with instructions:");
-  try {
-    const model = ai.getGenerativeModel({
-      model: "gemini-2.0-flash",
-      systemInstruction: instructions.contents,
-    });
-
-    const blogFormat = {
-      type: "object",
-      properties: {
-        title: {
-          type: "string",
-          description: "The title of the blog post",
-        },
-        content: {
-          type: "string",
-          description: "The main content of the blog post",
-        },
-      },
-      required: ["title", "content"],
-    };
-
-    console.log("💬 [Gemini] Starting chat session");
-    const chatSession = model.startChat({
-      generationConfig: {
-        ...CONFIG.gemini.config,
-        responseMimeType: "application/json",
-        responseSchema: blogFormat,
-      },
-      history: conversation.conversation.map((msg) => ({
-        role: msg.role === "AI" ? "model" : "user",
-        parts: msg.parts,
-      })),
-    });
-
-    console.log("📤 [Gemini] Sending message to Gemini API");
-    const result = await chatSession.sendMessage(instructions.contents);
-    console.log("📥 [Gemini] Successfully received response from Gemini API");
-
-    try {
-      const responseText = result.response.text();
-      console.log("Raw response:", responseText);
-      const response = JSON.parse(responseText);
-      return response;
-    } catch (parseError) {
-      console.error("Failed to parse JSON response:", parseError);
-      throw new Error(`Failed to parse Gemini response: ${parseError.message}`);
-    }
-  } catch (error) {
-    console.error("⚠️ [Gemini] API error:", error.message);
-    throw new Error(`Gemini API error: ${error.message}`);
-  }
+  const ai = new GoogleGenAI({
+    vertexai: false,
+    apiKey: process.env.GEMINI_API_KEY,
+  });
+  const response = await ai.models.generateContent({
+    model: "gemini-2.0-flash",
+    contents: contents,
+    config: {
+      systemInstruction: instructions,
+      responseMimeType: "text/plain",
+      maxOutputTokens: 4096,
+      temperature: 1.4,
+      topP: 0.5,
+      topK: 64,
+    },
+  });
+  console.debug(response.text);
+  console.log("📥 [Gemini] Successfully received response from Gemini API");
+  return response.text;
 }
