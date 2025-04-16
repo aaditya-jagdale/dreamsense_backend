@@ -123,41 +123,27 @@ export async function askGemini(instructions, messages, format) {
 
 export async function titleGenerator({ answer, instructions, format }) {
   console.log("🤖 [Gemini] Initializing request with instructions:");
+  console.log("📤 [Gemini] Sending message to Gemini API");
+  const ai = new GoogleGenAI({
+    vertexai: false,
+    apiKey: process.env.GEMINI_API_KEY,
+  });
+  const response = await ai.models.generateContent({
+    model: "gemini-2.0-flash",
+    contents: answer,
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: format,
+    },
+  });
+  console.log("📥 [Gemini] Successfully received response from Gemini API");
+
   try {
-    const model = ai.getGenerativeModel({
-      model: "gemini-2.0-flash",
-      systemInstruction: instructions,
-    });
-
-    console.log("💬 [Gemini] Starting chat session");
-    const chatSession = model.startChat({
-      generationConfig: {
-        temperature: 1.4,
-        topP: 0.8,
-        topK: 64,
-        maxOutputTokens: 4096,
-        responseMimeType: "application/json",
-        responseSchema: format,
-      },
-      history: [],
-    });
-
-    console.log("📤 [Gemini] Sending message to Gemini API");
-    const result = await chatSession.sendMessage(answer);
-    console.log("📥 [Gemini] Successfully received response from Gemini API");
-
-    try {
-      const responseText = result.response.text();
-      console.log("Raw response:", responseText);
-      const response = JSON.parse(responseText);
-      return response;
-    } catch (parseError) {
-      console.error("Failed to parse JSON response:", parseError);
-      throw new Error(`Failed to parse Gemini response: ${parseError.message}`);
-    }
-  } catch (error) {
-    console.error("⚠️ [Gemini] API error:", error.message);
-    throw new Error(`Gemini API error: ${error.message}`);
+    const jsonResponse = JSON.parse(response.text);
+    return jsonResponse;
+  } catch (parseError) {
+    console.error("Failed to parse JSON response:", parseError);
+    throw new Error(`Failed to parse Gemini response: ${parseError.message}`);
   }
 }
 
