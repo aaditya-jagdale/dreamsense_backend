@@ -344,3 +344,4 @@ xxhash==3.5.0
 yarl==1.20.1
 youtube-transcript-api==0.6.3
 zipp==3.21.0
+gunicorn==22.0.0
