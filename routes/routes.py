@@ -25,30 +25,61 @@ async def handle_dream(request: Request) -> Dict:
         # Validate Bearer token format
         if not auth_header.startswith("Bearer "):
             raise HTTPException(status_code=401, detail="Invalid authorization format. Must be 'Bearer <token>'")
-            
-        token = auth_header.split(" ")[1]
+        
+        # Extract and validate token
+        try:
+            token = auth_header.split(" ")[1]
+            if not token or len(token.strip()) == 0:
+                raise HTTPException(status_code=401, detail="Empty token provided")
+        except IndexError:
+            raise HTTPException(status_code=401, detail="Malformed authorization header")
 
-        if not supabase.verify_token(token):
-            raise HTTPException(status_code=401, detail="Invalid token")
-        else:
-            print("Token is valid")
+        # Verify token with Supabase
+        try:
+            if not supabase.verify_token(token):
+                raise HTTPException(status_code=401, detail="Invalid or expired token")
+        except Exception as e:
+            raise HTTPException(status_code=401, detail=f"Token verification failed: {str(e)}")
 
-        body = await request.json()
+        # Parse request body
+        try:
+            body = await request.json()
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=f"Invalid JSON in request body: {str(e)}")
+
         if not isinstance(body, dict):
-            raise HTTPException(status_code=400, detail="Invalid request body format")
+            raise HTTPException(status_code=400, detail="Request body must be a JSON object")
             
+        # Validate query parameter
         query = body.get("query")
-        if not query or not isinstance(query, str):
-            raise HTTPException(status_code=400, detail="Query must be a non-empty string")
+        if query is None:
+            raise HTTPException(status_code=400, detail="Missing required field 'query'")
+        if not isinstance(query, str):
+            raise HTTPException(status_code=400, detail="Field 'query' must be a string")
+        if len(query.strip()) == 0:
+            raise HTTPException(status_code=400, detail="Field 'query' cannot be empty")
 
-        response = await send_dream(query=query)
+        # Generate dream response
+        try:
+            response = await send_dream(query)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to generate dream response: {str(e)}")
+
+        # Handle image generation and upload
+        if response.get('imageJsonProfile'):
+            try:
+                image_url = await supabase.upload_image(response['imageJsonProfile'], access_token=token)
+                response["image_url"] = image_url if image_url else None
+            except Exception as e:
+                print(f"Image generation/upload failed: {str(e)}")
+                response["image_url"] = None
+
         return response
 
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid JSON in request body")
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
-
 @router.get("/generate-token")
 async def generate_token(request: Request) -> Dict:
     access_token = supabase.get_access_token()
@@ -88,7 +119,7 @@ async def gen_image(request: Request) -> Dict:
         
         # Generate and upload image
         try:
-            image_url = supabase.upload_image(prompt, access_token=token)
+            image_url = await supabase.upload_image(prompt, access_token=token)
             return {"image": image_url}
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
