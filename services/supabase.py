@@ -32,9 +32,9 @@ class Supabase:
         response = self.client.auth.sign_in_with_password(credentials={"email": "aadi@gmail.com", "password": "123456"})
         return response.session.access_token
     
-    def upload_image(self, prompt: str, access_token: str) -> str:
+    async def upload_image(self, prompt: str, access_token: str) -> str:
         # Generate the image using Gemini
-        img: Image.Image = generate_image(prompt)
+        img: Image.Image = await generate_image(prompt)
 
         # Convert the image to bytes (PNG format)
         if(img is None):
@@ -73,4 +73,14 @@ class Supabase:
         )
 
         url_response = storage_client.storage.from_(bucket_name).create_signed_url(file_path, expires_in=60 * 60 * 1)
-        return str(url_response)
+
+        # Extract the signed URL string from the response
+        signed_url: str | None = None
+        if isinstance(url_response, dict):
+            # Supabase client may return keys "signedURL" or "signedUrl" depending on version
+            signed_url = url_response.get("signedURL") or url_response.get("signedUrl")
+        # Fallback to str representation if extraction failed
+        if not signed_url:
+            signed_url = str(url_response)
+
+        return signed_url

@@ -5,10 +5,10 @@ from io import BytesIO
 
 # client = genai.Client()
 
-def generate_image(prompt: str) -> Image.Image:
+async def generate_image(prompt: str) -> Image.Image:
     client = genai.Client()
 
-    contents = ('Generate a 3d rendered image of my dream. Dont limit this to be realistic. Make it as creative as possible. The image should be generate from my POV. I should me the main character. No matter if I am the good guy or the bad guy. If my dream is a nightmare, make it as scary as possible. ' + prompt)
+    contents = ('Generate a very accurate image based on the given json profile.' + prompt)
 
     try:
         response = client.models.generate_content(
