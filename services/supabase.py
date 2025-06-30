@@ -72,7 +72,7 @@ class Supabase:
             },
         )
 
-        url_response = storage_client.storage.from_(bucket_name).create_signed_url(file_path, expires_in=60 * 60 * 1)
+        url_response = storage_client.storage.from_(bucket_name).create_signed_url(file_path, expires_in=60 * 60 * 24)
 
         # Extract the signed URL string from the response
         signed_url: str | None = None
@@ -84,3 +84,16 @@ class Supabase:
             signed_url = str(url_response)
 
         return signed_url
+    
+    def upload_dream(self, user_input: str, response: str, image_url: str, access_token: str) -> str:
+        user_id = self.get_user_id(access_token)
+        create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"), options= SyncClientOptions(
+            headers={
+                "Authorization": f"Bearer {access_token}"
+            }
+        )).table("dreams").insert({
+            "user_id": user_id,
+            "description": user_input,
+            "response": response,
+            "image": image_url
+        }).execute()
