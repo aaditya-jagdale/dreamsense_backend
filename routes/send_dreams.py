@@ -24,8 +24,6 @@ async def send_dream(query: str, access_token: str):
     )
 
     response = agent.run(query).content
-    
-    supabase.upload_dream(user_input=query, response=response.message_output, image_url=response.image_output, access_token=access_token)
 
     return {
         "message": "Dream sent successfully",

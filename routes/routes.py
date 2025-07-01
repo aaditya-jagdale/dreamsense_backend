@@ -13,36 +13,36 @@ from services.google_cloud import check_subscription_status, get_google_credenti
 router = APIRouter()
 supabase = Supabase()
 
+def verify_user_token(request: Request) -> bool:
+    """Verify if the user token is valid. Returns True if valid, False otherwise."""
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return False
+    
+    try:
+        token = auth_header.split(" ")[1]
+        if not token or len(token.strip()) == 0:
+            return False
+        return supabase.verify_token(token)
+    except (IndexError, Exception):
+        return False
+
+# Health check endpoint
 @router.get("/health")
 async def health() -> Dict[str, str]:
     return {"message": "Never gonna give you up"}
 
+# Send a dream to the AI agent
 @router.post("/send-dream")
 async def handle_dream(request: Request) -> Dict:
     try:
-        # Check for Authorization header
-        auth_header = request.headers.get("Authorization")
-        if not auth_header:
-            raise HTTPException(status_code=401, detail="Authorization header is required")
-            
-        # Validate Bearer token format
-        if not auth_header.startswith("Bearer "):
-            raise HTTPException(status_code=401, detail="Invalid authorization format. Must be 'Bearer <token>'")
-        
-        # Extract and validate token
-        try:
-            token = auth_header.split(" ")[1]
-            if not token or len(token.strip()) == 0:
-                raise HTTPException(status_code=401, detail="Empty token provided")
-        except IndexError:
-            raise HTTPException(status_code=401, detail="Malformed authorization header")
+        # Verify user token
+        if not verify_user_token(request):
+            raise HTTPException(status_code=401, detail="Invalid or expired token")
 
-        # Verify token with Supabase
-        try:
-            if not supabase.verify_token(token):
-                raise HTTPException(status_code=401, detail="Invalid or expired token")
-        except Exception as e:
-            raise HTTPException(status_code=401, detail=f"Token verification failed: {str(e)}")
+        # Get token for further use
+        auth_header = request.headers.get("Authorization")
+        token = auth_header.split(" ")[1]
 
         # Parse request body
         try:
@@ -71,41 +71,40 @@ async def handle_dream(request: Request) -> Dict:
         # Handle image generation and upload
         if response.get('imageJsonProfile'):
             try:
-                image_url = await supabase.upload_image(response['imageJsonProfile'], access_token=token)
-                response["image_url"] = image_url if image_url else None
+                image_response = await supabase.upload_image(response['imageJsonProfile'], access_token=token)
+                response["image_url"] = image_response["signed_url"] if image_response else None
+                response["image_filename"] = image_response["filename"] if image_response else None
+                
             except Exception as e:
                 print(f"Image generation/upload failed: {str(e)}")
                 response["image_url"] = None
-
+            
+            supabase.upload_dream(user_input=query, response=response["data"], image_url=response["image_filename"], access_token=token)
         return response
 
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+# Generate a dummy access token
 @router.get("/generate-token")
 async def generate_token(request: Request) -> Dict:
     access_token = supabase.get_access_token()
     return {"access_token": access_token}
 
-
+# Generate an image using Gemini
 @router.post("/generate-image")
 async def gen_image(request: Request) -> Dict:
     try:
-        # Check for Authorization header
+        # Verify user token
+        if not verify_user_token(request):
+            raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+        # Get token for further use
         auth_header = request.headers.get("Authorization")
-        if not auth_header:
-            raise HTTPException(status_code=401, detail="Authorization header is required")
-            
-        # Validate Bearer token format
-        if not auth_header.startswith("Bearer "):
-            raise HTTPException(status_code=401, detail="Invalid authorization format. Must be 'Bearer <token>'")
-            
         token = auth_header.split(" ")[1]
 
-        # Validate token and get user ID
-        if not supabase.verify_token(token):
-            raise HTTPException(status_code=401, detail="Invalid token")
         # Parse and validate request body
         try:
             body = await request.json()
@@ -134,36 +133,18 @@ async def gen_image(request: Request) -> Dict:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
+# Root endpoint
 @router.get("/")
 async def root() -> Dict[str, str]:
     return {"message": "Never gonna let you down"}
 
+# Verify a subscription
 @router.post("/verify-subscription")
 async def verify_subscription_endpoint(request: Request) -> Dict:
     try:
-        # Check for Authorization header
-        auth_header = request.headers.get("Authorization")
-        if not auth_header:
-            raise HTTPException(status_code=401, detail="Authorization header is required")
-            
-        # Validate Bearer token format
-        if not auth_header.startswith("Bearer "):
-            raise HTTPException(status_code=401, detail="Invalid authorization format. Must be 'Bearer <token>'")
-        
-        # Extract and validate token
-        try:
-            token = auth_header.split(" ")[1]
-            if not token or len(token.strip()) == 0:
-                raise HTTPException(status_code=401, detail="Empty token provided")
-        except IndexError:
-            raise HTTPException(status_code=401, detail="Malformed authorization header")
-
-        # Verify token with Supabase
-        try:
-            if not supabase.verify_token(token):
-                raise HTTPException(status_code=401, detail="Invalid or expired token")
-        except Exception as e:
-            raise HTTPException(status_code=401, detail=f"Token verification failed: {str(e)}")
+        # Verify user token
+        if not verify_user_token(request):
+            raise HTTPException(status_code=401, detail="Invalid or expired token")
 
         # Parse request body
         try:
@@ -239,10 +220,6 @@ async def verify_subscription_endpoint(request: Request) -> Dict:
 
 @router.get("/google-cloud-health")
 async def google_cloud_health() -> Dict:
-    """
-    Check if Google Cloud credentials are properly configured.
-    This endpoint helps verify that the environment variables are set correctly.
-    """
     try:
         # Try to get credentials
         credentials = get_google_credentials()

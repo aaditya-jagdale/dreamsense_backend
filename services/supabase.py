@@ -83,7 +83,7 @@ class Supabase:
         if not signed_url:
             signed_url = str(url_response)
 
-        return signed_url
+        return {"signed_url": signed_url, "filename": filename}
     
     def upload_dream(self, user_input: str, response: str, image_url: str, access_token: str) -> str:
         user_id = self.get_user_id(access_token)
