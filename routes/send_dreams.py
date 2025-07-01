@@ -11,7 +11,7 @@ class DreamOutput(BaseModel):
     message_output: str = Field(description="The message to send to the user")
     image_output: str = Field(description="An ultra detailed json context profile of the dream that would be used to generate an image")
 
-async def send_dream(query: str):
+async def send_dream(query: str, access_token: str):
     supabase = Supabase()
     prompt = supabase.get_prompt()
 
@@ -24,6 +24,7 @@ async def send_dream(query: str):
     )
 
     response = agent.run(query).content
+
     return {
         "message": "Dream sent successfully",
         "success": True,
