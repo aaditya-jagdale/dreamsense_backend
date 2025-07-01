@@ -4,7 +4,6 @@ from agno.models.google import Gemini
 import os
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
-
 load_dotenv()
 
 class DreamOutput(BaseModel):
