@@ -8,7 +8,7 @@ import datetime
 from typing import Dict, Optional, Tuple
 
 def get_google_credentials():
-    # Check if credentials are provided as environment variable convert to json
+    # First, check if credentials are provided as environment variables (for production)
     credentials_json = os.getenv('GOOGLE_SERVICE_ACCOUNT_JSON')
     credentials_b64 = os.getenv('GOOGLE_SERVICE_ACCOUNT_JSON_B64')
     
@@ -40,12 +40,25 @@ def get_google_credentials():
         except Exception as e:
             raise ValueError(f"Invalid base64 encoded JSON in GOOGLE_SERVICE_ACCOUNT_JSON_B64 environment variable: {e}")
     
-    # Fallback to default credentials (for Google Cloud environments)
+    # Fallback to local credentials.json file (for development)
+    credentials_file = "credentials.json"
+    if os.path.exists(credentials_file):
+        try:
+            credentials = service_account.Credentials.from_service_account_file(
+                credentials_file,
+                scopes=["https://www.googleapis.com/auth/androidpublisher"]
+            )
+            credentials.refresh(Request())
+            return credentials
+        except Exception as e:
+            print(f"Warning: Failed to load credentials from {credentials_file}: {e}")
+    
+    # Final fallback to default credentials (for Google Cloud environments)
     try:
         credentials, project = default(scopes=["https://www.googleapis.com/auth/androidpublisher"])
         return credentials
     except Exception as e:
-        raise Exception(f"Failed to get default credentials: {e}")
+        raise Exception(f"Failed to get credentials. Please ensure you have either:\n1. GOOGLE_SERVICE_ACCOUNT_JSON environment variable set (recommended for production)\n2. GOOGLE_SERVICE_ACCOUNT_JSON_B64 environment variable set (recommended for production)\n3. A 'credentials.json' file in the project root (for development only)\n4. Default Google Cloud credentials configured\n\nError: {e}")
 
 def verify_subscription(
     package_name: str,
