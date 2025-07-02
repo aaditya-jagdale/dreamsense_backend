@@ -9,18 +9,9 @@ client = ElevenLabs(
 )
 
 async def generate_tts_audio(text: str):
-    """
-    Generates TTS audio from the given text using ElevenLabs API.
-    
-    Args:
-        text (str): The text to convert to speech
-        
-    Returns:
-        bytes: Audio data in MP3 format
-    """
     try:
         response = client.text_to_speech.convert(
-            voice_id="co1DmUePVu3j1G6yCS55", 
+            voice_id="co1DmUePVu3j1G6yCS55",
             output_format="mp3_44100_128",
             text=text,
             model_id="eleven_multilingual_v2",

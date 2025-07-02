@@ -25,16 +25,19 @@ class Supabase:
             return False
 
     def get_prompt(self):
-        response = self.client.table("daily_read").select("*").eq("title", "PROMPT").execute()
+        response = self.client.table("daily_read").select("contents").eq("title", "PROMPT").single().execute()
+        return response.data.get("contents", "")
 
     def get_access_token(self):
         # subabase login via email
         response = self.client.auth.sign_in_with_password(credentials={"email": "aadi@gmail.com", "password": "123456"})
         return response.session.access_token
     
-    async def upload_image(self, prompt: str, access_token: str) -> str:
+    async def upload_image(self, prompt: str, access_token: str, user_profile: dict) -> str:
         # Generate the image using Gemini
-        img: Image.Image = await generate_image(prompt)
+        # Convert user_profile dict to string for the generate_image function
+        user_profile_str = str(user_profile) if user_profile else ""
+        img: Image.Image = await generate_image(prompt, user_profile_str)
 
         # Convert the image to bytes (PNG format)
         if(img is None):
@@ -97,3 +100,11 @@ class Supabase:
             "response": response,
             "image": image_url
         }).execute()
+
+
+    def get_user_profile(self, access_token: str) -> dict:
+        user_id = self.get_user_id(access_token)
+        response = self.client.table("users").select("questionare").eq("user_id", user_id).execute()
+        if response.data and len(response.data) > 0:
+            return response.data[0].get("questionare", {})
+        return {}

@@ -14,7 +14,6 @@ router = APIRouter()
 supabase = Supabase()
 
 def verify_user_token(request: Request) -> bool:
-    """Verify if the user token is valid. Returns True if valid, False otherwise."""
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
         return False
@@ -52,7 +51,7 @@ async def handle_dream(request: Request) -> Dict:
 
         if not isinstance(body, dict):
             raise HTTPException(status_code=400, detail="Request body must be a JSON object")
-            
+        
         # Validate query parameter
         query = body.get("query")
         if query is None:
@@ -64,20 +63,22 @@ async def handle_dream(request: Request) -> Dict:
 
         # Generate dream response
         try:
-            response = await send_dream(query, access_token=token)
+            user_profile = supabase.get_user_profile(token)
+            response = await send_dream(query, access_token=token, user_profile=user_profile)
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to generate dream response: {str(e)}")
 
         # Handle image generation and upload
         if response.get('imageJsonProfile'):
             try:
-                image_response = await supabase.upload_image(response['imageJsonProfile'], access_token=token)
+                image_response = await supabase.upload_image(response['imageJsonProfile'], access_token=token, user_profile=user_profile)
                 response["image_url"] = image_response["signed_url"] if image_response else None
                 response["image_filename"] = image_response["filename"] if image_response else None
                 
             except Exception as e:
                 print(f"Image generation/upload failed: {str(e)}")
                 response["image_url"] = None
+                response["image_filename"] = None
             
             supabase.upload_dream(user_input=query, response=response["data"], image_url=response["image_filename"], access_token=token)
         return response
@@ -121,7 +122,7 @@ async def gen_image(request: Request) -> Dict:
         
         # Generate and upload image
         try:
-            image_url = await supabase.upload_image(prompt, access_token=token)
+            image_url = await supabase.upload_image(prompt, access_token=token, generate_image_func=generate_image)
             return {"image": image_url}
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
