@@ -2,6 +2,9 @@ from fastapi import APIRouter, File, UploadFile, Depends, HTTPException, Request
 from google.genai import types
 from google.genai import Client
 import shutil
+from services.google_cloud import check_subscription_status
+from services.tts_service import generate_tts_audio
+from fastapi.responses import Response
 
 from routes.routes import verify_user_token
 
@@ -47,3 +50,22 @@ async def transcribe_endpoint(request: Request, file: UploadFile = File(...)):
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
     return await transcribe_audio(file)
+
+@router.post("/tts")
+async def tts_endpoint(request: Request, body: dict):
+    # check body has "text"
+    if not body.get("text"):
+        raise HTTPException(status_code=400, detail="Text is required")
+
+    if not verify_user_token(request):
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+    try:
+        audio_bytes = await generate_tts_audio(body.get("text"))
+        return Response(
+            content=audio_bytes,
+            media_type="audio/mpeg",
+            headers={"Content-Disposition": "attachment; filename=tts_audio.mp3"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to generate TTS audio: {str(e)}")    
