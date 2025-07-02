@@ -122,7 +122,7 @@ async def gen_image(request: Request) -> Dict:
         
         # Generate and upload image
         try:
-            image_url = await supabase.upload_image(prompt, access_token=token, generate_image_func=generate_image)
+            image_url = await supabase.upload_image(prompt, access_token=token, user_profile={})
             return {"image": image_url}
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
