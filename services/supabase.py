@@ -101,10 +101,25 @@ class Supabase:
             "image": image_url
         }).execute()
 
-
     def get_user_profile(self, access_token: str) -> dict:
         user_id = self.get_user_id(access_token)
         response = self.client.table("users").select("questionare").eq("user_id", user_id).execute()
         if response.data and len(response.data) > 0:
             return response.data[0].get("questionare", {})
         return {}
+    
+    def get_user_dream_count(self, access_token: str) -> int:
+        user_id = self.get_user_id(access_token)
+        print("Dream count for user: ", user_id)
+        response = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"), options= SyncClientOptions(
+            headers={
+                "Authorization": f"Bearer {access_token}"
+            }
+        )).table("dreams").select("*").eq("user_id", user_id).execute()
+        print("Dream count: ", len(response.data))
+        return len(response.data) if response.data else 0
+
+
+
+
+

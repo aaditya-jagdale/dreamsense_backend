@@ -216,14 +216,11 @@ class APITester:
             return False, f"Connection error: {str(e)}"
     
     def test_verify_subscription(self) -> Tuple[bool, str]:
-        """Test the subscription verification API"""
         if not self.access_token:
             return False, "No access token available"
             
         try:
             payload = {
-                "package_name": "com.example.test",
-                "subscription_id": "test_subscription",
                 "purchase_token": "test_token"
             }
             response = requests.post(
@@ -236,6 +233,14 @@ class APITester:
             # This endpoint might return various status codes depending on the test data
             # We consider it working if it returns a proper response (even if verification fails)
             if response.status_code in [200, 400, 401, 404, 500]:
+                if response.status_code == 200:
+                    data = response.json()
+                    # Check if response has the expected structure
+                    expected_fields = ["success", "is_pro", "subscription_type"]
+                    if all(field in data for field in expected_fields):
+                        return True, ""
+                    else:
+                        return False, "Response missing expected fields"
                 return True, ""  # API is responding, even if with error
             else:
                 return False, f"Unexpected status code: {response.status_code}"
@@ -243,7 +248,6 @@ class APITester:
             return False, f"Connection error: {str(e)}"
     
     def test_google_cloud_health(self) -> Tuple[bool, str]:
-        """Test the Google Cloud health endpoint"""
         try:
             response = requests.get(f"{self.base_url}/google-cloud-health", timeout=10)
             if response.status_code == 200:

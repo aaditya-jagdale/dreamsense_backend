@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from services.supabase import Supabase
-from services.google_cloud import check_subscription_status, get_google_credentials
+from services.google_cloud import check_subscription_status, get_google_credentials, is_pro_subscriber
 
 router = APIRouter()
 supabase = Supabase()
@@ -43,7 +43,7 @@ async def handle_dream(request: Request) -> Dict:
         auth_header = request.headers.get("Authorization")
         token = auth_header.split(" ")[1]
 
-        # Parse request body
+        # Parse request body first
         try:
             body = await request.json()
         except ValueError as e:
@@ -51,6 +51,37 @@ async def handle_dream(request: Request) -> Dict:
 
         if not isinstance(body, dict):
             raise HTTPException(status_code=400, detail="Request body must be a JSON object")
+
+        # Check if user has a subscription
+        # Note: This is a placeholder - you'll need to get the actual purchase_token from the request
+        # For now, using a default value. You should modify this to get the token from the request body
+        purchase_token = body.get("purchase_token", "com.dreamsense.app.subscription")
+        
+        is_subscriber = is_pro_subscriber(purchase_token, token)
+        if not is_subscriber["is_pro"]:
+            subscription_type = is_subscriber.get("subscription_type", "unknown")
+            error_details = {
+                "error": "subscription_required",
+                "message": "User does not have an active subscription",
+                "subscription_type": subscription_type,
+                "purchase_token": purchase_token,
+                "is_pro": is_subscriber["is_pro"],
+                "expiry_date": is_subscriber.get("expiry_date"),
+                "dreams_remaining": is_subscriber.get("dreams_remaining")
+            }
+            
+            if subscription_type == "no_subscription":
+                error_details["message"] = "User does not have a subscription"
+            else:
+                # Handle other cases like expired subscriptions
+                error_msg = is_subscriber.get("error", "Subscription verification failed")
+                error_details["message"] = f"Subscription error: {error_msg}"
+            
+            print(f"Subscription verification failed in send-dream: {error_details}")
+            raise HTTPException(status_code=403, detail=error_details)
+        
+        # Get user profile
+        user_profile = supabase.get_user_profile(token)
         
         # Validate query parameter
         query = body.get("query")
@@ -155,62 +186,58 @@ async def verify_subscription_endpoint(request: Request) -> Dict:
 
         if not isinstance(body, dict):
             raise HTTPException(status_code=400, detail="Request body must be a JSON object")
-            
-        # Validate required fields
-        package_name = body.get("package_name")
-        subscription_id = body.get("subscription_id")
+        
+        # Validate required field
         purchase_token = body.get("purchase_token")
         
-        if not package_name:
-            raise HTTPException(status_code=400, detail="Missing required field 'package_name'")
-        if not subscription_id:
-            raise HTTPException(status_code=400, detail="Missing required field 'subscription_id'")
         if not purchase_token:
             raise HTTPException(status_code=400, detail="Missing required field 'purchase_token'")
         
-        if not isinstance(package_name, str) or not isinstance(subscription_id, str) or not isinstance(purchase_token, str):
-            raise HTTPException(status_code=400, detail="All fields must be strings")
+        if not isinstance(purchase_token, str):
+            raise HTTPException(status_code=400, detail="Purchase token must be a string")
 
-        # Validate field lengths
-        if len(package_name.strip()) == 0:
-            raise HTTPException(status_code=400, detail="Package name cannot be empty")
-        if len(subscription_id.strip()) == 0:
-            raise HTTPException(status_code=400, detail="Subscription ID cannot be empty")
+        # Validate field length
         if len(purchase_token.strip()) == 0:
             raise HTTPException(status_code=400, detail="Purchase token cannot be empty")
 
-        # Verify subscription
+        # Verify subscription using the simple checker
         try:
-            subscription_status = check_subscription_status(
-                package_name=package_name.strip(),
-                subscription_id=subscription_id.strip(),
-                purchase_token=purchase_token.strip()
-            )
+            auth_header = request.headers.get("Authorization")
+            token = auth_header.split(" ")[1]
+            is_subscriber = is_pro_subscriber(purchase_token.strip(), token)
             
-            # If verification failed, return appropriate error
-            if not subscription_status["success"]:
-                error_msg = subscription_status.get("error", "Unknown verification error")
-                if "API Error: 401" in error_msg:
-                    raise HTTPException(status_code=401, detail="Invalid Google Play credentials or insufficient permissions")
-                elif "API Error: 404" in error_msg:
-                    raise HTTPException(status_code=404, detail="Subscription not found. Please verify package_name, subscription_id, and purchase_token")
-                else:
-                    raise HTTPException(status_code=500, detail={
-                        "message" : f"Subscription verification failed: {error_msg}",
-                        "package_name": package_name,
-                        "subscription_id": subscription_id,
-                        "purchase_token": purchase_token
-                    })
+            # Determine subscription status and return appropriate response
+            subscription_type = is_subscriber.get("subscription_type", "unknown")
             
-            return subscription_status
+            # Always include expiry_date in response, even if None
+            expiry_date = is_subscriber.get("expiry_date")
             
-        except HTTPException:
-            raise
+            if subscription_type == "pro_subscription" and is_subscriber["is_pro"]:
+                return {
+                    "status": "Pro",
+                    "message": "User has an active PRO subscription",
+                    "expiry_date": expiry_date,
+                    "dreams_remaining": None  # Pro users have unlimited dreams
+                }
+            elif subscription_type == "free_trial":
+                dreams_remaining = is_subscriber.get("dreams_remaining", 0)
+                return {
+                    "status": "Free tier",
+                    "message": f"User has free trial access with {dreams_remaining} dreams remaining",
+                    "expiry_date": expiry_date,
+                    "dreams_remaining": dreams_remaining
+                }
+            else:
+                return {
+                    "status": "NO SUBSCRIPTION",
+                    "message": "User does not have an active subscription",
+                    "expiry_date": expiry_date,
+                    "dreams_remaining": 0,
+                }
+            
         except Exception as e:
             raise HTTPException(status_code=500, detail={
                 "message" : f"Subscription verification failed: {str(e)}",
-                "package_name": package_name,
-                "subscription_id": subscription_id,
                 "purchase_token": purchase_token
             })
 
