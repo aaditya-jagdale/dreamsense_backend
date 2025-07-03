@@ -141,7 +141,7 @@ def is_pro_subscriber(purchase_token: str, access_token: str) -> Dict:
             }
         elif dreams_remaining > 0:
             return {
-                "is_pro": False,
+                "is_pro": True,  # Free trial users should return TRUE
                 "subscription_type": "free_trial",
                 "expiry_date": subscription_result.get("expiry_date"),
                 "dreams_remaining": dreams_remaining,

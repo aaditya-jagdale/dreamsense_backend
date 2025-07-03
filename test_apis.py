@@ -236,7 +236,7 @@ class APITester:
                 if response.status_code == 200:
                     data = response.json()
                     # Check if response has the expected structure
-                    expected_fields = ["success", "is_pro", "subscription_type"]
+                    expected_fields = ["status", "is_pro", "message"]
                     if all(field in data for field in expected_fields):
                         return True, ""
                     else:
