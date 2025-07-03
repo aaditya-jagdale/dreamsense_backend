@@ -131,7 +131,7 @@ def is_pro_subscriber(purchase_token: str, access_token: str) -> Dict:
         dreams_remaining = max(0, 2 - dream_count) if isinstance(dream_count, int) else 0
         
         # Determine subscription type and status
-        if (subscription_result.get("is_active", False) and subscription_result.get("expiry_date") > datetime.datetime.now(datetime.UTC)):
+        if (subscription_result.get("is_active", False) and datetime.datetime.fromisoformat(subscription_result.get("expiry_date")) > datetime.datetime.now(datetime.UTC)):
             return {
                 "is_pro": True,
                 "subscription_type": "pro_subscription",
