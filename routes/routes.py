@@ -58,8 +58,10 @@ async def handle_dream(request: Request) -> Dict:
         purchase_token = body.get("purchase_token", "com.dreamsense.app.subscription")
         
         is_subscriber = is_pro_subscriber(purchase_token, token)
+        subscription_type = is_subscriber.get("subscription_type", "unknown")
+        
+        # Allow access for pro subscribers and free trial users with remaining dreams
         if not is_subscriber["is_pro"]:
-            subscription_type = is_subscriber.get("subscription_type", "unknown")
             error_details = {
                 "error": "subscription_required",
                 "message": "User does not have an active subscription",
@@ -218,15 +220,17 @@ async def verify_subscription_endpoint(request: Request) -> Dict:
                     "message": "User has an active PRO subscription",
                     "expiry_date": expiry_date,
                     "dreams_remaining": None,  # Pro users have unlimited dreams
+                    "is_pro": is_subscriber["is_pro"],
                     "response": is_subscriber
                 }
             elif subscription_type == "free_trial":
                 dreams_remaining = is_subscriber.get("dreams_remaining", 0)
                 return {
-                    "status": "Free tier",
+                    "status": "FREE TRIAL",
                     "message": f"User has free trial access with {dreams_remaining} dreams remaining",
                     "expiry_date": expiry_date,
                     "dreams_remaining": dreams_remaining,
+                    "is_pro": is_subscriber["is_pro"],
                     "response": is_subscriber
                 }
             else:
@@ -235,6 +239,7 @@ async def verify_subscription_endpoint(request: Request) -> Dict:
                     "message": "User does not have an active subscription",
                     "expiry_date": expiry_date,
                     "dreams_remaining": 0,
+                    "is_pro": is_subscriber["is_pro"],
                     "response": is_subscriber
                     }
             
