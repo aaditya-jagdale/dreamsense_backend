@@ -6,6 +6,11 @@ from google.auth import default
 import requests
 import datetime
 from typing import Dict, Optional, Tuple
+from services.supabase import Supabase
+from services.purchase_verification import check_subscription_status
+
+supabase = Supabase()
+
 
 def get_google_credentials():
     # First, check if credentials are provided as environment variables (for production)
@@ -80,12 +85,15 @@ def verify_subscription(
         
         # Make API request
         response = requests.get(url, headers=headers)
+
+        # log the response in console
+        print(response.json())
         
         if response.status_code == 200:
             data = response.json()
             expiry = int(data.get("expiryTimeMillis", 0))
-            expiry_date = datetime.datetime.fromtimestamp(expiry / 1000)
-            now = datetime.datetime.utcnow()
+            expiry_date = datetime.datetime.fromtimestamp(expiry / 1000, datetime.UTC)
+            now = datetime.datetime.now(datetime.UTC)
             
             is_active = expiry_date > now
             
@@ -98,30 +106,62 @@ def verify_subscription(
         error_msg = f"Verification failed: {str(e)}"
         return False, None, error_msg
 
-def check_subscription_status(
-    package_name: str,
-    subscription_id: str,
-    purchase_token: str
-) -> Dict:
-    is_active, subscription_data, error = verify_subscription(
-        package_name, subscription_id, purchase_token
-    )
-    
-    result = {
-        "is_active": is_active,
-        "success": error is None
-    }
-    
-    if error:
-        result["error"] = error
-    else:
-        result["subscription_data"] = subscription_data
+def is_pro_subscriber(purchase_token: str, access_token: str) -> Dict:
+    """
+    Check if user has a pro subscription using the purchase token.
+    Returns a dictionary with subscription status information.
+    """
+    try:
+        # Get user ID from token
+        user_id = supabase.get_user_id(access_token)
         
-        if subscription_data:
-            expiry = int(subscription_data.get("expiryTimeMillis", 0))
-            if expiry > 0:
-                expiry_date = datetime.datetime.fromtimestamp(expiry / 1000)
-                result["expiry_date"] = expiry_date.isoformat()
-                result["expiry_timestamp"] = expiry
-    
-    return result
+        # Default package name and subscription ID for the app
+        package_name = "com.dreamsense.app"
+        subscription_id = "dreamsense_pro_1"
+        
+        # Check subscription status using Google Play API
+        subscription_result = check_subscription_status(
+            package_name=package_name,
+            subscription_id=subscription_id,
+            purchase_token=purchase_token
+        )
+        
+        # Get user's dream count for free tier logic
+        dream_count = supabase.get_user_dream_count(access_token)
+        dreams_remaining = max(0, 2 - dream_count) if isinstance(dream_count, int) else 0
+        
+        # Determine subscription type and status
+        if (subscription_result.get("is_active", False) and subscription_result.get("expiry_date") > datetime.datetime.now(datetime.UTC)):
+            return {
+                "is_pro": True,
+                "subscription_type": "pro_subscription",
+                "expiry_date": subscription_result.get("expiry_date"),
+                "dreams_remaining": None,  # Pro users have unlimited dreams
+                "success": True
+            }
+        elif dreams_remaining > 0:
+            return {
+                "is_pro": False,
+                "subscription_type": "free_trial",
+                "expiry_date": subscription_result.get("expiry_date"),
+                "dreams_remaining": dreams_remaining,
+                "success": True
+            }
+        else:
+            return {
+                "is_pro": False,
+                "subscription_type": "no_subscription",
+                "expiry_date": subscription_result.get("expiry_date"),
+                "dreams_remaining": 0,
+                "success": True
+            }
+            
+    except Exception as e:
+        return {
+            "is_pro": False,
+            "subscription_type": "error",
+            "expiry_date": None,
+            "dreams_remaining": 0,
+            "success": False,
+            "error": str(e)
+        }
