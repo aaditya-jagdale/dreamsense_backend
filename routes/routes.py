@@ -217,7 +217,8 @@ async def verify_subscription_endpoint(request: Request) -> Dict:
                     "status": "Pro",
                     "message": "User has an active PRO subscription",
                     "expiry_date": expiry_date,
-                    "dreams_remaining": None  # Pro users have unlimited dreams
+                    "dreams_remaining": None,  # Pro users have unlimited dreams
+                    "response": is_subscriber
                 }
             elif subscription_type == "free_trial":
                 dreams_remaining = is_subscriber.get("dreams_remaining", 0)
@@ -225,7 +226,8 @@ async def verify_subscription_endpoint(request: Request) -> Dict:
                     "status": "Free tier",
                     "message": f"User has free trial access with {dreams_remaining} dreams remaining",
                     "expiry_date": expiry_date,
-                    "dreams_remaining": dreams_remaining
+                    "dreams_remaining": dreams_remaining,
+                    "response": is_subscriber
                 }
             else:
                 return {
@@ -233,7 +235,8 @@ async def verify_subscription_endpoint(request: Request) -> Dict:
                     "message": "User does not have an active subscription",
                     "expiry_date": expiry_date,
                     "dreams_remaining": 0,
-                }
+                    "response": is_subscriber
+                    }
             
         except Exception as e:
             raise HTTPException(status_code=500, detail={
