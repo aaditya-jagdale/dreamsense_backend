@@ -113,7 +113,10 @@ async def handle_dream(request: Request) -> Dict:
                 response["image_url"] = None
                 response["image_filename"] = None
             
-            supabase.upload_dream(user_input=query, response=response["data"], image_url=response["image_filename"], access_token=token)
+            supabase_data = supabase.upload_dream(user_input=query, response=response["data"], image_url=response["image_filename"], access_token=token)
+            response['id'] = supabase_data['id']
+            response['supabase_data'] = supabase_data
+
         return response
 
     except HTTPException:

@@ -30,7 +30,7 @@ class Supabase:
 
     def get_access_token(self):
         # subabase login via email
-        response = self.client.auth.sign_in_with_password(credentials={"email": "aadi@gmail.com", "password": "123456"})
+        response = self.client.auth.sign_in_with_password(credentials={"email": "test@gmail.com", "password": "123456"})
         return response.session.access_token
     
     async def upload_image(self, prompt: str, access_token: str, user_profile: dict) -> str:
@@ -88,9 +88,9 @@ class Supabase:
 
         return {"signed_url": signed_url, "filename": filename}
     
-    def upload_dream(self, user_input: str, response: str, image_url: str, access_token: str) -> str:
+    def upload_dream(self, user_input: str, response: str, image_url: str, access_token: str) -> dict:
         user_id = self.get_user_id(access_token)
-        create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"), options= SyncClientOptions(
+        supabase_res = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"), options= SyncClientOptions(
             headers={
                 "Authorization": f"Bearer {access_token}"
             }
@@ -100,6 +100,7 @@ class Supabase:
             "response": response,
             "image": image_url
         }).execute()
+        return supabase_res.data[0]
 
     def get_user_profile(self, access_token: str) -> dict:
         user_id = self.get_user_id(access_token)
