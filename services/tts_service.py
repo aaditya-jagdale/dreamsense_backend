@@ -1,11 +1,8 @@
 from elevenlabs import ElevenLabs
-from dotenv import load_dotenv
-import os
-
-load_dotenv()
+from utils.config import settings
 
 client = ElevenLabs(
-    api_key=os.getenv("ELEVENLABS_API_KEY"),
+    api_key=settings.elevenlabs_api_key,
 )
 
 async def generate_tts_audio(text: str):

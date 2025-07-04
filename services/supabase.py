@@ -1,17 +1,14 @@
 from supabase import create_client
 from supabase.lib.client_options import SyncClientOptions
-from dotenv import load_dotenv
-import os
 from routes.generate_images import generate_image
 import io
 import uuid
 from PIL import Image
-
-load_dotenv()
+from utils.config import settings
 
 class Supabase:
     def __init__(self):
-        self.client = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"))
+        self.client = create_client(settings.supabase_url, settings.supabase_key)
 
     def get_user_id(self, token: str) -> str:
         response = self.client.auth.get_user(token)
@@ -56,7 +53,7 @@ class Supabase:
         file_path = f"{user_id}/{filename}"
         storage_client = self.client
         try:
-            storage_client = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"), options= SyncClientOptions(
+            storage_client = create_client(settings.supabase_url, settings.supabase_key, options= SyncClientOptions(
                 headers={
                     "Authorization": f"Bearer {access_token}"
                 }
@@ -90,7 +87,7 @@ class Supabase:
     
     def upload_dream(self, user_input: str, response: str, image_url: str, access_token: str) -> dict:
         user_id = self.get_user_id(access_token)
-        supabase_res = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"), options= SyncClientOptions(
+        supabase_res = create_client(settings.supabase_url, settings.supabase_key, options= SyncClientOptions(
             headers={
                 "Authorization": f"Bearer {access_token}"
             }
@@ -112,7 +109,7 @@ class Supabase:
     def get_user_dream_count(self, access_token: str) -> int:
         user_id = self.get_user_id(access_token)
         print("Dream count for user: ", user_id)
-        response = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"), options= SyncClientOptions(
+        response = create_client(settings.supabase_url, settings.supabase_key, options= SyncClientOptions(
             headers={
                 "Authorization": f"Bearer {access_token}"
             }
