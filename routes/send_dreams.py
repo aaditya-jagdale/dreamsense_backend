@@ -1,10 +1,8 @@
 from agno.agent import Agent
 from services.supabase import Supabase
 from agno.models.google import Gemini
-import os
-from dotenv import load_dotenv
 from pydantic import BaseModel, Field
-load_dotenv()
+from utils.config import settings
 
 class DreamOutput(BaseModel):
     message_output: str = Field(description="The message to send to the user")
@@ -21,7 +19,7 @@ async def send_dream(query: str, access_token: str, user_profile: str):
         # user_profile can be empty dict if no profile exists, which is acceptable
 
         # Validate API key
-        api_key = os.getenv("GEMINI_API_KEY")
+        api_key = settings.gemini_api_key
         if not api_key:
             raise ValueError("Missing Gemini API key")
 

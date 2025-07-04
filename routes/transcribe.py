@@ -2,11 +2,12 @@ from fastapi import APIRouter, File, UploadFile, Depends, HTTPException, Request
 from google.genai import types
 from google.genai import Client
 import shutil
-from services.google_cloud import check_subscription_status
 from services.tts_service import generate_tts_audio
 from fastapi.responses import Response
+from pydantic import BaseModel
 
-from routes.routes import verify_user_token
+from utils.auth import auth_service
+from schemas.requests import TTSRequest
 
 router = APIRouter()
 client = Client()
@@ -41,27 +42,17 @@ async def transcribe_audio(audio_file: UploadFile):
         raise HTTPException(status_code=500, detail=f"Failed to transcribe audio: {str(e)}")
 
 @router.post("/transcribe")
-async def transcribe_endpoint(request: Request, file: UploadFile = File(...)):
+async def transcribe_endpoint(file: UploadFile = File(...), auth_token: str = Depends(auth_service.require_auth)):
     """
     API endpoint to transcribe an audio file.
     Requires a valid bearer token for authentication.
     """
-    if not verify_user_token(request):
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
-
     return await transcribe_audio(file)
 
 @router.post("/tts")
-async def tts_endpoint(request: Request, body: dict):
-    # check body has "text"
-    if not body.get("text"):
-        raise HTTPException(status_code=400, detail="Text is required")
-
-    if not verify_user_token(request):
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
-
+async def tts_endpoint(request: TTSRequest, auth_token: str = Depends(auth_service.require_auth)):
     try:
-        audio_bytes = await generate_tts_audio(body.get("text"))
+        audio_bytes = await generate_tts_audio(request.text)
         return Response(
             content=audio_bytes,
             media_type="audio/mpeg",

@@ -80,7 +80,6 @@ multidict==6.5.0
 networkx==3.5
 numba==0.61.2
 numpy==2.2.6
-openai==1.90.0
 orjson==3.10.18
 packaging==25.0
 pandas==2.3.0
