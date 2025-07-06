@@ -79,6 +79,9 @@ dreamsense/
    PACKAGE_NAME=com.dreamsense.app
    SUBSCRIPTION_ID=dreamsense_pro_1
    FREE_TRIAL_DREAMS=2
+   
+   # Test User Configuration
+   TEST_USER_ID=9e90cd1a-f665-47fb-9903-1b03285e9f6d
    ```
 
 4. **Run the application**
@@ -135,6 +138,16 @@ Authorization: Bearer <your_access_token>
     "purchase_token": "your_purchase_token"
   }
   ```
+
+### Test User Feature
+The API includes a special test user feature that grants premium access to a specific user ID. This is useful for development and testing purposes.
+
+- **Test User ID**: Configurable via `TEST_USER_ID` environment variable
+- **Default Value**: `9e90cd1a-f665-47fb-9903-1b03285e9f6d`
+- **Access Level**: Unlimited premium access (no subscription verification required)
+- **Use Case**: Development, testing, and debugging
+
+When a user with the test user ID makes any request, they automatically receive premium access without needing to verify their subscription with Google Play.
 
 ### Audio Processing
 - `POST /api/v1/transcribe` - Transcribe audio file (multipart/form-data)
@@ -204,6 +217,7 @@ docker run -p 8000:8000 dreamsense-api
 | `PACKAGE_NAME` | Android app package name | No (default: com.dreamsense.app) |
 | `SUBSCRIPTION_ID` | Google Play subscription ID | No (default: dreamsense_pro_1) |
 | `FREE_TRIAL_DREAMS` | Number of free trial dreams | No (default: 2) |
+| `TEST_USER_ID` | Test user ID for premium access | No (default: 9e90cd1a-f665-47fb-9903-1b03285e9f6d) |
 
 ## 🔒 Security Features
 
