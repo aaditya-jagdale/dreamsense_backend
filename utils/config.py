@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     # Free trial settings
     free_trial_dreams: int = Field(default=2, env="FREE_TRIAL_DREAMS")
     
+    # Test user settings
+    test_user_ids: list[str] = Field(default=["9e90cd1a-f665-47fb-9903-1b03285e9f6d","c8b285f4-e34a-4468-b1fa-19d2244dc164"], env="TEST_USER_ID")
+    
     class Config:
         env_file = ".env"
         case_sensitive = False
@@ -41,4 +44,8 @@ def get_setting(key: str, default: Optional[str] = None) -> str:
     """Get setting value with fallback to environment variable"""
     if hasattr(settings, key):
         return getattr(settings, key)
-    return os.getenv(key, default) if default else os.getenv(key) 
+    return os.getenv(key, default) if default else os.getenv(key)
+
+def is_test_user(user_id: str) -> bool:
+    """Check if the given user ID matches the test user ID"""
+    return user_id in settings.test_user_ids

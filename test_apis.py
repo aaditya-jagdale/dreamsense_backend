@@ -258,6 +258,34 @@ class APITester:
         except Exception as e:
             return False, f"Connection error: {str(e)}"
     
+    def test_test_user_subscription(self) -> Tuple[bool, str]:
+        """Test that the test user gets premium access without subscription verification"""
+        if not self.access_token:
+            return False, "No access token available"
+            
+        try:
+            payload = {
+                "purchase_token": "test_token_for_test_user"
+            }
+            response = requests.post(
+                f"{self.base_url}/verify-subscription",
+                headers=self.get_headers(),
+                json=payload,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                # Check if test user gets premium access
+                if data.get("status") == "TEST USER" and data.get("is_pro") == True:
+                    return True, ""
+                else:
+                    return False, f"Test user not getting premium access. Status: {data.get('status')}, is_pro: {data.get('is_pro')}"
+            else:
+                return False, f"Unexpected status code: {response.status_code}"
+        except Exception as e:
+            return False, f"Connection error: {str(e)}"
+    
     def run_all_tests(self):
         """Run all API tests and generate report"""
         print("🚀 Starting API Tests for DreamSense Backend")
@@ -311,6 +339,9 @@ class APITester:
         google_health_success, google_health_msg = self.test_google_cloud_health()
         self.print_status("Google Cloud Health", google_health_success, google_health_msg)
         
+        test_user_success, test_user_msg = self.test_test_user_subscription()
+        self.print_status("Test User Subscription", test_user_success, test_user_msg)
+        
         # Generate summary
         print("📊 Test Summary:")
         print("=" * 50)
@@ -324,7 +355,8 @@ class APITester:
             ("Audio Transcription", transcribe_success),
             ("Text-to-Speech", tts_success),
             ("Subscription Verification", subscription_success),
-            ("Google Cloud Health", google_health_success)
+            ("Google Cloud Health", google_health_success),
+            ("Test User Subscription", test_user_success)
         ]
         
         working_count = sum(1 for _, success in all_tests if success)
