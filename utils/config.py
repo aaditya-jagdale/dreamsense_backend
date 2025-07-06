@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     
     # API Keys
     gemini_api_key: str = Field(..., env="GEMINI_API_KEY")
-    elevenlabs_api_key: str = Field(..., env="ELEVENLABS_API_KEY")
+    unrealspeech_api_key: str = Field(..., env="UNREALSPEECH_API_KEY")
     
     # App settings
     app_name: str = Field(default="DreamSense API", env="APP_NAME")
