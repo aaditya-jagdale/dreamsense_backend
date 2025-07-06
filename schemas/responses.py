@@ -23,6 +23,15 @@ class GenerateImageResponse(BaseModel):
 class GenerateTokenResponse(BaseModel):
     access_token: str = Field(..., description="Generated access token")
 
+class TTSResponse(BaseModel):
+    CreationTime: str = Field(..., description="Creation timestamp")
+    OutputUri: str = Field(..., description="URI to the generated audio file")
+    RequestCharacters: int = Field(..., description="Number of characters in the request")
+    TaskId: str = Field(..., description="Task ID for the TTS request")
+    TaskStatus: str = Field(..., description="Status of the TTS task")
+    TimestampsUri: Optional[str] = Field(None, description="URI to timestamps data")
+    VoiceId: str = Field(..., description="Voice ID used for TTS")
+
 class SubscriptionStatus(BaseModel):
     status: str = Field(..., description="Subscription status")
     message: str = Field(..., description="Status message")

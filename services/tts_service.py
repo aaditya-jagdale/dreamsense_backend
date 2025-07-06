@@ -1,20 +1,24 @@
-from elevenlabs import ElevenLabs
+import httpx
+import json
 from utils.config import settings
 
-client = ElevenLabs(
-    api_key=settings.elevenlabs_api_key,
-)
-
 async def generate_tts_audio(text: str):
-    try:
-        response = client.text_to_speech.convert(
-            voice_id="co1DmUePVu3j1G6yCS55",
-            output_format="mp3_44100_128",
-            text=text,
-            model_id="eleven_multilingual_v2",
-        )
-        # Convert generator to bytes
-        audio_bytes = b''.join(response)
-        return audio_bytes
-    except Exception as e:
-        raise Exception(f"Failed to generate TTS audio: {str(e)}")
+    url = "https://api.v8.unrealspeech.com/speech"
+    headers = {
+        "Authorization": f"Bearer {settings.unrealspeech_api_key}",
+        "Content-Type": "application/json"
+    }
+    
+    payload = {
+        "Text": text,
+        "VoiceId": "Sierra",
+        "Bitrate": "320k",
+        "AudioFormat": "mp3",
+        "OutputFormat": "uri",
+        "TimestampType": "sentence",
+        "sync": False
+    }
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, headers=headers, json=payload)
+        return response.json()
