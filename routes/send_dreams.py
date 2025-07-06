@@ -1,8 +1,11 @@
 from agno.agent import Agent
-from services.supabase import Supabase
+from services.supabase_client import Supabase
 from agno.models.google import Gemini
 from pydantic import BaseModel, Field
 from utils.config import settings
+
+
+supabase = Supabase()
 
 class DreamOutput(BaseModel):
     message_output: str = Field(description="The message to send to the user")
@@ -11,12 +14,11 @@ class DreamOutput(BaseModel):
 async def send_dream(query: str, access_token: str, user_profile: str):
     try:
         # Initialize Supabase and get required data
-        supabase = Supabase()
         prompt = supabase.get_prompt()
         if not prompt:
             raise ValueError("Failed to retrieve prompt from database")
             
-        # user_profile can be empty dict if no profile exists, which is acceptable
+        prev_dreams = supabase.get_user_prev_dreams(access_token=access_token)
 
         # Validate API key
         api_key = settings.gemini_api_key
@@ -29,6 +31,7 @@ async def send_dream(query: str, access_token: str, user_profile: str):
             description="You are a dream explainer. You are given a dream and you need to explain it to the user in a way that is easy to understand. You need to use the image_output to generate an image of the dream.",
             system_message=prompt,
             context=user_profile,
+            additional_context=prev_dreams,
             add_context=True,
             response_model=DreamOutput,
             model=Gemini(id="gemini-2.5-flash", api_key=api_key),

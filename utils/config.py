@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     debug: bool = Field(default=False, env="DEBUG")
     
     # Subscription settings
-    package_name: str = Field(default="com.dreamsense.app", env="PACKAGE_NAME")
+    package_name: str = Field(default="com.dreamsenseuser.app", env="PACKAGE_NAME")
     subscription_id: str = Field(default="dreamsense_pro_1", env="SUBSCRIPTION_ID")
     
     # Free trial settings

@@ -1,6 +1,6 @@
 import datetime
 from typing import Dict
-from services.supabase import Supabase
+from services.supabase_client import Supabase
 from services.google_cloud_utils import GoogleCloudUtils
 from utils.config import settings
 
