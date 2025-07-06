@@ -5,7 +5,7 @@ from routes.generate_images import generate_image
 from dotenv import load_dotenv
 load_dotenv()
 
-from services.supabase import Supabase
+from services.supabase_client import Supabase
 from services.google_cloud import get_google_credentials
 from services.subscription_service import subscription_service
 from utils.auth import auth_service

@@ -1,9 +1,11 @@
 import datetime
 from typing import Dict
-from services.supabase import Supabase
+from services.supabase_client import Supabase
 from services.google_cloud_utils import GoogleCloudUtils
+from utils.config import Settings
 
 supabase = Supabase()
+settings = Settings()
 
 def get_google_credentials():
     """Get Google Cloud credentials using consolidated utilities"""
@@ -29,8 +31,8 @@ def is_pro_subscriber(purchase_token: str, access_token: str) -> Dict:
         print(f"Purchase token: {purchase_token}")
         
         # Default package name and subscription ID for the app
-        package_name = "com.dreamsense.app"
-        subscription_id = "dreamsense_pro_1"
+        package_name = settings.package_name
+        subscription_id = settings.subscription_id
         
         print(f"Checking subscription with package_name: {package_name}, subscription_id: {subscription_id}")
         

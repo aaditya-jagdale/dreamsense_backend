@@ -116,8 +116,16 @@ class Supabase:
         )).table("dreams").select("*").eq("user_id", user_id).execute()
         print("Dream count: ", len(response.data))
         return len(response.data) if response.data else 0
-
-
+    
+    def get_user_prev_dreams(self, access_token: str) -> int:
+        user_id = self.get_user_id(access_token)
+        print("Dream count for user: ", user_id)
+        response = create_client(settings.supabase_url, settings.supabase_key, options= SyncClientOptions(
+            headers={
+                "Authorization": f"Bearer {access_token}"
+            }
+        )).table("dreams").select("description, created_at").eq("user_id", user_id).execute()
+        return response.data
 
 
 

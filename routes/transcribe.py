@@ -170,4 +170,4 @@ async def tts_endpoint(request: TTSRequest, auth_token: str = Depends(auth_servi
             headers={"Content-Disposition": "attachment; filename=tts_audio.mp3"}
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to generate TTS audio: {str(e)}")    
+        raise HTTPException(status_code=500, detail=f"Failed to generate TTS audio: {str(e)}")

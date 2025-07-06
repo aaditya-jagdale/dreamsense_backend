@@ -1,5 +1,5 @@
 from fastapi import Request, HTTPException
-from services.supabase import Supabase
+from services.supabase_client import Supabase
 from typing import Optional
 
 class AuthService:
