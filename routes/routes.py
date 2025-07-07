@@ -62,22 +62,10 @@ async def handle_dream(request: SendDreamRequest, auth_token: str = Depends(auth
             response = await send_dream(request.query, access_token=auth_token, user_profile=user_profile)
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to generate dream response: {str(e)}")
-
-        # Handle image generation and upload
-        if response.get('imageJsonProfile'):
-            try:
-                image_response = await supabase.upload_image(response['imageJsonProfile'], access_token=auth_token, user_profile=user_profile)
-                response["image_url"] = image_response["signed_url"] if image_response else None
-                response["image_filename"] = image_response["filename"] if image_response else None
-                
-            except Exception as e:
-                print(f"Image generation/upload failed: {str(e)}")
-                response["image_url"] = None
-                response["image_filename"] = None
             
-            supabase_data = supabase.upload_dream(user_input=request.query, response=response["data"], image_url=response["image_filename"], access_token=auth_token)
-            response['id'] = supabase_data['id']
-            response['supabase_data'] = supabase_data
+        supabase_data = supabase.upload_dream(user_input=request.query, response=response["data"], access_token=auth_token)
+        response['id'] = supabase_data['id']
+        response['supabase_data'] = supabase_data
 
         return SendDreamResponse(**response)
 

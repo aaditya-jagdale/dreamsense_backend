@@ -85,7 +85,7 @@ class Supabase:
 
         return {"signed_url": signed_url, "filename": filename}
     
-    def upload_dream(self, user_input: str, response: str, image_url: str, access_token: str) -> dict:
+    def upload_dream(self, user_input: str, response: str, access_token: str) -> dict:
         user_id = self.get_user_id(access_token)
         supabase_res = create_client(settings.supabase_url, settings.supabase_key, options= SyncClientOptions(
             headers={
@@ -95,7 +95,6 @@ class Supabase:
             "user_id": user_id,
             "description": user_input,
             "response": response,
-            "image": image_url
         }).execute()
         return supabase_res.data[0]
 
