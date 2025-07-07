@@ -2,7 +2,7 @@ import datetime
 from typing import Dict
 from services.supabase_client import Supabase
 from services.google_cloud_utils import GoogleCloudUtils
-from utils.config import Settings
+from utils.config import Settings, is_test_user
 
 supabase = Supabase()
 settings = Settings()
@@ -29,6 +29,17 @@ def is_pro_subscriber(purchase_token: str, access_token: str) -> Dict:
         user_id = supabase.get_user_id(access_token)
         print(f"Checking subscription for user_id: {user_id}")
         print(f"Purchase token: {purchase_token}")
+        
+        # Check if user is a test user
+        if is_test_user(user_id):
+            print("User is a test user - granting premium access")
+            return {
+                "is_pro": True,
+                "subscription_type": "test_user",
+                "expiry_date": None,
+                "dreams_remaining": None,  # Test users have unlimited dreams
+                "success": True
+            }
         
         # Default package name and subscription ID for the app
         package_name = settings.package_name
@@ -61,7 +72,7 @@ def is_pro_subscriber(purchase_token: str, access_token: str) -> Dict:
         
         # Get user's dream count for free tier logic
         dream_count = supabase.get_user_dream_count(access_token)
-        dreams_remaining = max(0, 2 - dream_count) if isinstance(dream_count, int) else 0
+        dreams_remaining = max(0, settings.free_trial_dreams - dream_count) if isinstance(dream_count, int) else 0
         
         print(f"Dream count: {dream_count}, Dreams remaining: {dreams_remaining}")
         
