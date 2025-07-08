@@ -11,7 +11,6 @@ class HealthResponse(BaseResponse):
 
 class SendDreamResponse(BaseResponse):
     data: Optional[str] = Field(None, description="Generated dream analysis")
-    imageJsonProfile: Optional[str] = Field(None, description="Image generation profile")
     image_url: Optional[str] = Field(None, description="Generated image URL")
     image_filename: Optional[str] = Field(None, description="Generated image filename")
     id: Optional[str] = Field(None, description="Dream record ID")
@@ -22,6 +21,15 @@ class GenerateImageResponse(BaseModel):
 
 class GenerateTokenResponse(BaseModel):
     access_token: str = Field(..., description="Generated access token")
+
+class TTSResponse(BaseModel):
+    CreationTime: str = Field(..., description="Creation timestamp")
+    OutputUri: str = Field(..., description="URI to the generated audio file")
+    RequestCharacters: int = Field(..., description="Number of characters in the request")
+    TaskId: str = Field(..., description="Task ID for the TTS request")
+    TaskStatus: str = Field(..., description="Status of the TTS task")
+    TimestampsUri: Optional[str] = Field(None, description="URI to timestamps data")
+    VoiceId: str = Field(..., description="Voice ID used for TTS")
 
 class SubscriptionStatus(BaseModel):
     status: str = Field(..., description="Subscription status")

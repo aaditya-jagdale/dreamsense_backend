@@ -6,9 +6,10 @@ from services.tts_service import generate_tts_audio
 from fastapi.responses import Response
 from pydantic import BaseModel
 import os
-
+import json
 from utils.auth import auth_service
 from schemas.requests import TTSRequest
+from schemas.responses import TTSResponse
 
 router = APIRouter()
 client = Client()
@@ -160,14 +161,7 @@ async def transcribe_endpoint(file: UploadFile = File(...), auth_token: str = De
     """
     return await transcribe_audio(file)
 
-@router.post("/tts")
+@router.post("/tts", response_model=TTSResponse)
 async def tts_endpoint(request: TTSRequest, auth_token: str = Depends(auth_service.require_auth)):
-    try:
-        audio_bytes = await generate_tts_audio(request.text)
-        return Response(
-            content=audio_bytes,
-            media_type="audio/mpeg",
-            headers={"Content-Disposition": "attachment; filename=tts_audio.mp3"}
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to generate TTS audio: {str(e)}")
+    response = await generate_tts_audio(request.text)
+    return response

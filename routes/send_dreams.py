@@ -48,21 +48,18 @@ async def send_dream(query: str, access_token: str, user_profile: str):
         return {
             "message": "Dream sent successfully",
             "success": True,
-            "data": response.content.message_output,
-            "imageJsonProfile": response.content.image_output,
+            "data": response.content.message_output,       
         }
 
     except ValueError as e:
         return {
             "message": str(e),
             "success": False,
-            "data": None,
-            "imageJsonProfile": None
+            "data": None
         }
     except Exception as e:
         return {
             "message": f"An unexpected error occurred: {str(e)}",
             "success": False,
-            "data": None,
-            "imageJsonProfile": None
+            "data": None
         }

@@ -31,10 +31,13 @@ class Supabase:
         return response.session.access_token
     
     async def upload_image(self, prompt: str, access_token: str, user_profile: dict) -> str:
+        # Get image prompt first
+        image_prompt = self.get_image_prompt()
+        
         # Generate the image using Gemini
         # Convert user_profile dict to string for the generate_image function
         user_profile_str = str(user_profile) if user_profile else ""
-        img: Image.Image = await generate_image(prompt, user_profile_str)
+        img: Image.Image = await generate_image(prompt, user_profile_str, image_prompt)
 
         # Convert the image to bytes (PNG format)
         if(img is None):
@@ -85,7 +88,7 @@ class Supabase:
 
         return {"signed_url": signed_url, "filename": filename}
     
-    def upload_dream(self, user_input: str, response: str, image_url: str, access_token: str) -> dict:
+    def upload_dream(self, user_input: str, response: str, access_token: str) -> dict:
         user_id = self.get_user_id(access_token)
         supabase_res = create_client(settings.supabase_url, settings.supabase_key, options= SyncClientOptions(
             headers={
@@ -95,7 +98,6 @@ class Supabase:
             "user_id": user_id,
             "description": user_input,
             "response": response,
-            "image": image_url
         }).execute()
         return supabase_res.data[0]
 
@@ -126,6 +128,8 @@ class Supabase:
             }
         )).table("dreams").select("description, created_at").eq("user_id", user_id).execute()
         return response.data
-
+    def get_image_prompt(self) -> str:
+        response = self.client.table("daily_read").select("contents").eq("title", "IMAGE").single().execute()
+        return response.data.get("contents", "")
 
 
