@@ -11,7 +11,6 @@ class HealthResponse(BaseResponse):
 
 class SendDreamResponse(BaseResponse):
     data: Optional[str] = Field(None, description="Generated dream analysis")
-    imageJsonProfile: Optional[str] = Field(None, description="Image generation profile")
     image_url: Optional[str] = Field(None, description="Generated image URL")
     image_filename: Optional[str] = Field(None, description="Generated image filename")
     id: Optional[str] = Field(None, description="Dream record ID")
