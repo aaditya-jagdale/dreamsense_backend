@@ -6,6 +6,7 @@ import requests
 import datetime
 from typing import Dict, Optional, Tuple
 from utils.config import settings
+from urllib.parse import quote
 
 class GoogleCloudUtils:
     @staticmethod
@@ -39,7 +40,19 @@ class GoogleCloudUtils:
             credentials = GoogleCloudUtils.get_google_credentials()
             access_token = credentials.token
             
-            url = f"https://androidpublisher.googleapis.com/androidpublisher/v3/applications/{package_name}/purchases/subscriptions/{subscription_id}/tokens/{purchase_token}"
+            # URL encode the parameters to handle special characters
+            encoded_package_name = quote(package_name, safe='')
+            encoded_subscription_id = quote(subscription_id, safe='')
+            encoded_purchase_token = quote(purchase_token, safe='')
+            
+            url = f"https://androidpublisher.googleapis.com/androidpublisher/v3/applications/{encoded_package_name}/purchases/subscriptions/{encoded_subscription_id}/tokens/{encoded_purchase_token}"
+            
+            # Log the request details for debugging
+            print(f"Google Play API Request:")
+            print(f"  Package Name: {package_name}")
+            print(f"  Subscription ID: {subscription_id}")
+            print(f"  Purchase Token: {purchase_token[:10]}..." if len(purchase_token) > 10 else f"  Purchase Token: {purchase_token}")
+            print(f"  URL: {url}")
             
             headers = {
                 "Authorization": f"Bearer {access_token}",
@@ -47,7 +60,8 @@ class GoogleCloudUtils:
             }
             
             response = requests.get(url, headers=headers)
-            print(f"Google Play API Response: {response.json()}")
+            print(f"Google Play API Response Status: {response.status_code}")
+            print(f"Google Play API Response: {response.text}")
             
             if response.status_code == 200:
                 data = response.json()
