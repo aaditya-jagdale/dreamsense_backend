@@ -16,9 +16,12 @@ class Supabase:
 
     def verify_token(self, token: str) -> bool:
         try:
-            self.client.auth.get_user(token)
+            print(f"Attempting to verify token with Supabase...")
+            response = self.client.auth.get_user(token)
+            print(f"Token verification successful for user: {response.user.id}")
             return True
-        except Exception:
+        except Exception as e:
+            print(f"Token verification failed with exception: {e}")
             return False
 
     def get_prompt(self):
@@ -27,7 +30,7 @@ class Supabase:
 
     def get_access_token(self):
         # subabase login via email
-        response = self.client.auth.sign_in_with_password(credentials={"email": "test@gmail.com", "password": "123456"})
+        response = self.client.auth.sign_in_with_password(credentials={"email": "test1@gmail.com", "password": "123456"})
         return response.session.access_token
     
     async def upload_image(self, prompt: str, access_token: str, user_profile: dict) -> str:

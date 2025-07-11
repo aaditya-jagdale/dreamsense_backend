@@ -45,7 +45,7 @@ async def handle_dream(request: SendDreamRequest, auth_token: str = Depends(auth
             }
             
             if subscription_type == "no_subscription":
-                error_details["message"] = "User does not have a subscription"
+                error_details["message"] = f"User does not have a subscription. Dreams remaining: {is_subscriber.get('dreams_remaining', 0)}"
             else:
                 # Handle other cases like expired subscriptions
                 error_msg = is_subscriber.get("error", "Subscription verification failed")
