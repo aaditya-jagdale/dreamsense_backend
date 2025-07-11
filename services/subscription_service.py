@@ -14,7 +14,8 @@ class SubscriptionService:
         try:
             # Get user ID from token
             user_id = self.supabase.get_user_id(access_token)
-            print(user_id)
+            # print user id in logs
+            print(f"User ID: {user_id}")
 
             if is_test_user(user_id):
                 return {
@@ -23,7 +24,34 @@ class SubscriptionService:
                     "subscription_type": "test_user",
                 }
             else:
-                # Check subscription status using Google Play API
+                # Check if purchase token is empty (no purchase made)
+                if not purchase_token or purchase_token.strip() == "":
+                    print("Purchase token is empty - checking free trial status")
+                    # Get user's dream count for free tier logic
+                    dream_count = self.supabase.get_user_dream_count(access_token)
+                    dreams_remaining = max(0, settings.free_trial_dreams - dream_count) if isinstance(dream_count, int) else 0
+                    
+                    print(f"Dream count: {dream_count}, Dreams remaining: {dreams_remaining}")
+                    
+                    if dreams_remaining > 0:
+                        print(f"User has free trial with {dreams_remaining} dreams remaining")
+                        return {
+                            "is_pro": True,  # Free trial users should return TRUE
+                            "subscription_type": "free_trial",
+                            "expiry_date": None,
+                            "dreams_remaining": dreams_remaining,
+                            "success": True
+                        }
+                    else:
+                        print("User has no free trial dreams remaining")
+                        return {
+                            "is_pro": False,
+                            "subscription_type": "no_subscription",
+                            "expiry_date": None,
+                            "dreams_remaining": 0,
+                            "success": True
+                        }              
+                
                 subscription_result = GoogleCloudUtils.check_subscription_status(
                     package_name=self.package_name,
                     subscription_id=self.subscription_id,
@@ -182,6 +210,16 @@ class SubscriptionService:
             return {
                 "status": "FREE TRIAL",
                 "message": f"User has free trial access with {dreams_remaining} dreams remaining",
+                "expiry_date": expiry_date,
+                "dreams_remaining": dreams_remaining,
+                "is_pro": subscription_result["is_pro"],
+                "response": subscription_result
+            }
+        elif subscription_type == "no_subscription":
+            dreams_remaining = subscription_result.get("dreams_remaining", 0)
+            return {
+                "status": "NO SUBSCRIPTION",
+                "message": f"User does not have an active subscription. Dreams remaining: {dreams_remaining}",
                 "expiry_date": expiry_date,
                 "dreams_remaining": dreams_remaining,
                 "is_pro": subscription_result["is_pro"],
