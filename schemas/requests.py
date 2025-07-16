@@ -21,6 +21,26 @@ class SendDreamRequest(BaseModel):
             return ""
         return v.strip() if v else ""
 
+class StreamDreamRequest(BaseModel):
+    query: str = Field(..., description="The dream description to analyze", min_length=1)
+    purchase_token: Optional[str] = Field(
+        default="", 
+        description="Purchase token for subscription verification (empty for free trial)"
+    )
+    
+    @validator('query')
+    def validate_query(cls, v):
+        if not v or not v.strip():
+            raise ValueError('Query cannot be empty')
+        return v.strip()
+    
+    @validator('purchase_token')
+    def validate_purchase_token(cls, v):
+        # Allow empty strings for free trial logic
+        if v is None:
+            return ""
+        return v.strip() if v else ""
+
 class GenerateImageRequest(BaseModel):
     prompt: str = Field(..., description="Image generation prompt", min_length=1)
     
