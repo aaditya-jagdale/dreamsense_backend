@@ -13,31 +13,15 @@ class StreamingService:
         self.model = "gemini-2.5-flash"
     
     async def stream_dream_analysis(self, query: str, access_token: str, user_profile: str) -> AsyncGenerator[str, None]:
-        """
-        Stream dream analysis using Gemini LLM with proper context and prompt.
-        
-        Args:
-            query: The dream description to analyze
-            access_token: User's access token for context
-            user_profile: User's profile information
-            
-        Yields:
-            str: Streaming text chunks
-        """
         try:
-            # Get the system prompt from database
             prompt = supabase.get_prompt()
             if not prompt:
                 yield "Error: Failed to retrieve prompt from database"
                 return
-            
-            # Get user's previous dreams for context
+
             prev_dreams = supabase.get_user_prev_dreams(access_token=access_token)
-            
-            # Build the full prompt with context
             full_prompt = self._build_prompt(prompt, query, user_profile, prev_dreams)
-            
-            # Start streaming using the correct API method and parameters
+
             stream = self.client.models.generate_content_stream(
                 model=self.model,
                 contents=[{"parts": [{"text": full_prompt}]}],
@@ -48,19 +32,21 @@ class StreamingService:
                     "max_output_tokens": 2048,
                 }
             )
+
+            # Convert synchronous generator to async generator
+            async def async_stream():
+                for response in stream:
+                    yield response
             
-            # Stream the response - handle synchronous generator in async context
-            for response in stream:
+            async for response in async_stream():
                 for candidate in response.candidates:
-                    content = candidate.content
-                    for part in content.parts:
+                    for part in candidate.content.parts:
                         text = part.text
                         if text:
                             yield text
-                            
+
         except Exception as e:
-            error_message = f"Error in streaming: {str(e)}"
-            yield error_message
+            yield f"Error in streaming: {str(e)}"
     
     def _build_prompt(self, system_prompt: str, query: str, user_profile: str, prev_dreams: str) -> str:
         """
