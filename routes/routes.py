@@ -206,3 +206,5 @@ async def stream_dream(request: StreamDreamRequest, auth_token: str = Depends(au
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+    
+    
