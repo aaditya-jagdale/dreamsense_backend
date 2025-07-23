@@ -32,9 +32,13 @@ class TTSResponse(BaseModel):
     VoiceId: str = Field(..., description="Voice ID used for TTS")
 
 class SubscriptionStatus(BaseModel):
-    # Simplified response - may be removed entirely
-    status: str = Field(..., description="Status message")
-    message: str = Field(..., description="Status message")
+    is_pro: bool = Field(..., description="Whether the user has pro subscription")
+    subscription_type: str = Field(..., description="Type of subscription (pro_subscription, free_trial, test_user, etc.)")
+    expiry_date: Optional[str] = Field(None, description="Subscription expiry date (ISO format)")
+    dreams_remaining: Optional[int] = Field(None, description="Number of dreams remaining for free trial users")
+    success: bool = Field(..., description="Whether the verification was successful")
+    error: Optional[str] = Field(None, description="Error message if verification failed")
+    error_type: Optional[str] = Field(None, description="Type of error that occurred")
 
 class GoogleCloudHealthResponse(BaseModel):
     status: str = Field(..., description="Health status")

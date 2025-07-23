@@ -29,8 +29,14 @@ class GenerateImageRequest(BaseModel):
         return v.strip()
 
 class VerifySubscriptionRequest(BaseModel):
-    # This endpoint might be removed entirely, but keeping minimal structure for now
-    pass
+    purchase_token: Optional[str] = Field(None, description="Google Play purchase token for subscription verification")
+    
+    @validator('purchase_token')
+    def validate_purchase_token(cls, v):
+        # Allow empty or None tokens - they will be handled by the endpoint logic
+        if v is None:
+            return None
+        return v.strip() if v else ""
 
 class TTSRequest(BaseModel):
     text: str = Field(..., description="Text to convert to speech", min_length=1)
