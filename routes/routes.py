@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from services.supabase_client import Supabase
-from services.google_cloud import get_google_credentials
+from services.google_cloud import get_google_credentials, is_pro_subscriber
 from services.streaming_service import streaming_service
 from utils.auth import auth_service
 from utils.validators import request_validator
@@ -78,20 +78,48 @@ async def gen_image(request: GenerateImageRequest, auth_token: str = Depends(aut
 async def root() -> HealthResponse:
     return HealthResponse(success=True, message="Never gonna let you down")
 
-# Verify a subscription - simplified to just return success since no subscription checking
+# Verify a subscription using Google Play purchase token
 @router.post("/verify-subscription", response_model=SubscriptionStatus)
 async def verify_subscription_endpoint(request: VerifySubscriptionRequest, auth_token: str = Depends(auth_service.require_auth)) -> SubscriptionStatus:
-    try:
-        # Since we're removing subscription verification, just return success
+    if not request.purchase_token or request.purchase_token.strip() == "":
         return SubscriptionStatus(
-            status="SUCCESS",
-            message="No subscription verification required - all users have access"
+            is_pro=False,
+            subscription_type="no_purchase_token",
+            expiry_date=None,
+            dreams_remaining=0,
+            success=True,
+            error=None,
+            error_type=None
+        )
+    
+    try:
+        # Get subscription status using the is_pro_subscriber function
+        subscription_status = is_pro_subscriber(request.purchase_token, auth_token)
+        
+        # Convert the response to match the SubscriptionStatus model
+        return SubscriptionStatus(
+            is_pro=subscription_status.get("is_pro", False),
+            subscription_type=subscription_status.get("subscription_type", "unknown"),
+            expiry_date=subscription_status.get("expiry_date"),
+            dreams_remaining=subscription_status.get("dreams_remaining"),
+            success=subscription_status.get("success", False),
+            error=subscription_status.get("error"),
+            error_type=subscription_status.get("error_type")
         )
         
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        # Return a structured error response instead of raising HTTPException
+        return SubscriptionStatus(
+            is_pro=False,
+            subscription_type="error",
+            expiry_date=None,
+            dreams_remaining=0,
+            success=False,
+            error=str(e),
+            error_type="internal_server_error"
+        )
 
 @router.get("/google-cloud-health", response_model=GoogleCloudHealthResponse)
 async def google_cloud_health() -> GoogleCloudHealthResponse:
