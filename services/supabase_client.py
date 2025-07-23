@@ -98,7 +98,6 @@ class Supabase:
                 "Authorization": f"Bearer {access_token}"
             }
         )).table("dreams").insert({
-            "user_id": user_id,
             "description": user_input,
             "response": response,
         }).execute()

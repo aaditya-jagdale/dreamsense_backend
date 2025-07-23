@@ -13,7 +13,7 @@ import tempfile
 from pathlib import Path
 
 class APITester:
-    def __init__(self, base_url: str = "http://localhost:8000"):
+    def __init__(self, base_url: str = "http://localhost:8000/api/v1"):
         self.base_url = base_url
         self.results = {}
         self.access_token = None
@@ -30,12 +30,10 @@ class APITester:
                 print(f"   └─ {message}")
         print()
     
-    def get_headers(self, include_auth: bool = True) -> Dict[str, str]:
-        """Get headers for API requests"""
-        headers = {
-            "Content-Type": "application/json"
-        }
-        if include_auth and self.access_token:
+    def get_headers(self) -> Dict[str, str]:
+        """Get headers with authorization if token is available"""
+        headers = {"Content-Type": "application/json"}
+        if self.access_token:
             headers["Authorization"] = f"Bearer {self.access_token}"
         return headers
     
@@ -220,9 +218,7 @@ class APITester:
             return False, "No access token available"
             
         try:
-            payload = {
-                "purchase_token": "test_token"
-            }
+            payload = {}  # No purchase token needed anymore
             response = requests.post(
                 f"{self.base_url}/verify-subscription",
                 headers=self.get_headers(),
@@ -230,18 +226,15 @@ class APITester:
                 timeout=30
             )
             
-            # This endpoint might return various status codes depending on the test data
-            # We consider it working if it returns a proper response (even if verification fails)
-            if response.status_code in [200, 400, 401, 404, 500]:
-                if response.status_code == 200:
-                    data = response.json()
-                    # Check if response has the expected structure
-                    expected_fields = ["status", "is_pro", "message"]
-                    if all(field in data for field in expected_fields):
-                        return True, ""
-                    else:
-                        return False, "Response missing expected fields"
-                return True, ""  # API is responding, even if with error
+            # This endpoint should always return success now
+            if response.status_code == 200:
+                data = response.json()
+                # Check if response has the expected structure
+                expected_fields = ["status", "message"]
+                if all(field in data for field in expected_fields):
+                    return True, ""
+                else:
+                    return False, "Response missing expected fields"
             else:
                 return False, f"Unexpected status code: {response.status_code}"
         except Exception as e:
@@ -259,14 +252,12 @@ class APITester:
             return False, f"Connection error: {str(e)}"
     
     def test_test_user_subscription(self) -> Tuple[bool, str]:
-        """Test that the test user gets premium access without subscription verification"""
+        """Test that all users have access without subscription verification"""
         if not self.access_token:
             return False, "No access token available"
             
         try:
-            payload = {
-                "purchase_token": "test_token_for_test_user"
-            }
+            payload = {}  # No purchase token needed anymore
             response = requests.post(
                 f"{self.base_url}/verify-subscription",
                 headers=self.get_headers(),
@@ -276,11 +267,11 @@ class APITester:
             
             if response.status_code == 200:
                 data = response.json()
-                # Check if test user gets premium access
-                if data.get("status") == "TEST USER" and data.get("is_pro") == True:
+                # Check if all users get access
+                if data.get("status") == "SUCCESS":
                     return True, ""
                 else:
-                    return False, f"Test user not getting premium access. Status: {data.get('status')}, is_pro: {data.get('is_pro')}"
+                    return False, f"User not getting access. Status: {data.get('status')}"
             else:
                 return False, f"Unexpected status code: {response.status_code}"
         except Exception as e:
@@ -381,8 +372,8 @@ def main():
     parser = argparse.ArgumentParser(description="Test DreamSense Backend APIs")
     parser.add_argument(
         "--url", 
-        default="http://localhost:8000",
-        help="Base URL of the API server (default: http://localhost:8000)"
+        default="http://localhost:8000/api/v1",
+        help="Base URL of the API server (default: http://localhost:8000/api/v1)"
     )
     
     args = parser.parse_args()

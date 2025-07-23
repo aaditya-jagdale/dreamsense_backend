@@ -33,8 +33,8 @@ dreamsense/
 │   ├── supabase.py                 # Supabase database operations
 │   ├── google_cloud_utils.py       # Google Cloud utilities
 │   ├── google_cloud.py             # Google Cloud integration
-│   ├── purchase_verification.py    # Purchase verification
-│   ├── subscription_service.py     # Subscription management
+│   ├── [removed] purchase_verification.py    # No longer needed - purchase verification removed
+│   ├── [removed] subscription_service.py     # No longer needed - subscription management removed
 │   └── tts_service.py              # Text-to-speech service
 └── routes/                         # API route handlers
     ├── routes.py                   # Main API routes
@@ -118,8 +118,7 @@ Authorization: Bearer <your_access_token>
 - `POST /api/v1/send-dream` - Analyze and interpret a dream
   ```json
   {
-    "query": "I was flying over a city",
-    "purchase_token": "com.dreamsense.app.subscription"
+    "query": "I was flying over a city"
   }
   ```
 
@@ -132,11 +131,9 @@ Authorization: Bearer <your_access_token>
   ```
 
 ### Subscription Management
-- `POST /api/v1/verify-subscription` - Verify user subscription status
+- `POST /api/v1/verify-subscription` - Verify user access (simplified - all authenticated users have access)
   ```json
-  {
-    "purchase_token": "your_purchase_token"
-  }
+  {}
   ```
 
 ### Test User Feature
